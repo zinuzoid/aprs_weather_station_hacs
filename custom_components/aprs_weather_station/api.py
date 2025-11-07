@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import socket
-from typing import Any
+import logging
+from typing import Final
 
-import aiohttp
-import async_timeout
+import aprslib
+
+_LOGGER: Final = logging.getLogger(__name__)
 
 
 class APRSWSApiClientError(Exception):
@@ -25,77 +26,38 @@ class APRSWSApiClientAuthenticationError(
     """Exception to indicate an authentication error."""
 
 
-def _verify_response_or_raise(response: aiohttp.ClientResponse) -> None:
-    """Verify that the response is valid."""
-    if response.status in (401, 403):
-        msg = "Invalid credentials"
-        raise APRSWSApiClientAuthenticationError(
-            msg,
-        )
-    response.raise_for_status()
-
-
 class APRSWSApiClient:
-    """Sample API Client."""
+    """APRSWS API Client."""
 
     def __init__(
         self,
-        username: str,
-        password: str,
-        session: aiohttp.ClientSession,
+        callsign: str,
+        port: int,
+        budlist: str,
     ) -> None:
-        """Sample API Client."""
-        self._username = username
-        self._password = password
-        self._session = session
+        """APRSWS API Client."""
+        self._callsign = callsign
+        self._port = port
+        self._budlist = budlist
 
-    async def async_get_data(self) -> Any:
-        """Get data from the API."""
-        return await self._api_wrapper(
-            method="get",
-            url="https://jsonplaceholder.typicode.com/posts/1",
+    def _gen_filter_from_budlist(self) -> str:
+        replace = self._budlist.strip().replace(",", "/")
+        return f"b/{replace}"
+
+    def test_connection(self) -> None:
+        """Test connection to APRS-IS server."""
+        ais_filter = self._gen_filter_from_budlist()
+        _LOGGER.info(
+            "Test connection with: callsign=%s port=%d budlist=%s",
+            self._callsign,
+            self._port,
+            ais_filter,
         )
-
-    async def async_set_title(self, value: str) -> Any:
-        """Get data from the API."""
-        return await self._api_wrapper(
-            method="patch",
-            url="https://jsonplaceholder.typicode.com/posts/1",
-            data={"title": value},
-            headers={"Content-type": "application/json; charset=UTF-8"},
-        )
-
-    async def _api_wrapper(
-        self,
-        method: str,
-        url: str,
-        data: dict | None = None,
-        headers: dict | None = None,
-    ) -> Any:
-        """Get information from the API."""
         try:
-            async with async_timeout.timeout(10):
-                response = await self._session.request(
-                    method=method,
-                    url=url,
-                    headers=headers,
-                    json=data,
-                )
-                _verify_response_or_raise(response)
-                return await response.json()
-
-        except TimeoutError as exception:
-            msg = f"Timeout error fetching information - {exception}"
-            raise APRSWSApiClientCommunicationError(
-                msg,
-            ) from exception
-        except (aiohttp.ClientError, socket.gaierror) as exception:
-            msg = f"Error fetching information - {exception}"
-            raise APRSWSApiClientCommunicationError(
-                msg,
-            ) from exception
-        except Exception as exception:  # pylint: disable=broad-except
-            msg = f"Something really wrong happened! - {exception}"
-            raise APRSWSApiClientError(
-                msg,
-            ) from exception
+            ais = aprslib.IS(self._callsign, port=self._port)
+            ais.set_filter(ais_filter)
+            ais.connect(retry=5)
+            ais.close()
+        except Exception as ex:
+            msg = f"Something wrong! - {ex}"
+            raise APRSWSApiClientCommunicationError(msg) from ex

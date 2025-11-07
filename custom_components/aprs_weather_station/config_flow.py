@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_PORT
 from homeassistant.helpers import selector
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from slugify import slugify
 
 from .api import (
@@ -15,7 +14,7 @@ from .api import (
     APRSWSApiClientCommunicationError,
     APRSWSApiClientError,
 )
-from .const import DOMAIN, LOGGER
+from .const import CONF_BUDLIST_FILTER, CONF_YOUR_CALLSIGN, DOMAIN, LOGGER
 
 
 class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -30,10 +29,12 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         _errors = {}
         if user_input is not None:
+            user_input[CONF_PORT] = int(user_input[CONF_PORT])
             try:
-                await self._test_credentials(
-                    username=user_input[CONF_USERNAME],
-                    password=user_input[CONF_PASSWORD],
+                await self._test_connect(
+                    callsign=user_input[CONF_YOUR_CALLSIGN],
+                    port=user_input[CONF_PORT],
+                    budlist=user_input[CONF_BUDLIST_FILTER],
                 )
             except APRSWSApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
@@ -46,14 +47,15 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 _errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(
-                    ## Do NOT use this in production code
-                    ## The unique_id should never be something that can change
-                    ## https://developers.home-assistant.io/docs/config_entries_config_flow_handler#unique-ids
-                    unique_id=slugify(user_input[CONF_USERNAME])
+                    unique_id=slugify(
+                        user_input[CONF_YOUR_CALLSIGN]
+                        + str(user_input[CONF_PORT])
+                        + user_input[CONF_BUDLIST_FILTER]
+                    )
                 )
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=user_input[CONF_USERNAME],
+                    title=user_input[CONF_BUDLIST_FILTER],
                     data=user_input,
                 )
 
@@ -62,28 +64,33 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_USERNAME,
-                        default=(user_input or {}).get(CONF_USERNAME, vol.UNDEFINED),
+                        CONF_YOUR_CALLSIGN,
+                        default=(user_input or {}).get(CONF_YOUR_CALLSIGN, "N0CALL"),
                     ): selector.TextSelector(
                         selector.TextSelectorConfig(
                             type=selector.TextSelectorType.TEXT,
                         ),
                     ),
-                    vol.Required(CONF_PASSWORD): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.PASSWORD,
-                        ),
+                    vol.Required(
+                        CONF_PORT, default=(user_input or {}).get(CONF_PORT, 14580)
+                    ): selector.NumberSelector(
+                        selector.NumberSelectorConfig(
+                            mode=selector.NumberSelectorMode.BOX, min=1, max=65535
+                        )
+                    ),
+                    vol.Required(CONF_BUDLIST_FILTER): selector.TextSelector(
+                        selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
                     ),
                 },
             ),
             errors=_errors,
         )
 
-    async def _test_credentials(self, username: str, password: str) -> None:
-        """Validate credentials."""
+    async def _test_connect(self, callsign: str, port: int, budlist: str) -> None:
+        """Test connection."""
         client = APRSWSApiClient(
-            username=username,
-            password=password,
-            session=async_create_clientsession(self.hass),
+            callsign=callsign,
+            port=port,
+            budlist=budlist,
         )
-        await client.async_get_data()
+        client.test_connection()
