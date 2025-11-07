@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import logging
-from typing import Final
-
 import aprslib
 
-_LOGGER: Final = logging.getLogger(__name__)
+from .const import LOGGER
 
 
 class APRSWSApiClientError(Exception):
@@ -47,7 +44,7 @@ class APRSWSApiClient:
     def test_connection(self) -> None:
         """Test connection to APRS-IS server."""
         ais_filter = self._gen_filter_from_budlist()
-        _LOGGER.info(
+        LOGGER.info(
             "Test connection with: callsign=%s port=%d budlist=%s",
             self._callsign,
             self._port,

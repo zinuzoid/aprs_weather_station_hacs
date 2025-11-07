@@ -26,7 +26,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator):
         """Update data via library."""
         try:
             # return await self.config_entry.runtime_data.client.async_get_data()
-            pass
+            return {}
         except APRSWSApiClientAuthenticationError as exception:
             raise ConfigEntryAuthFailed(exception) from exception
         except APRSWSApiClientError as exception:
