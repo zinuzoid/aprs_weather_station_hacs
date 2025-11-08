@@ -17,6 +17,7 @@ from .api import (
     APRSWSApiClientError,
 )
 from .const import (
+    APRSIS_USER_DEFINED_PORT,
     CONF_CALLSIGN,
     CONF_YOUR_CALLSIGN,
     DOMAIN,
@@ -97,11 +98,27 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
 
         _errors = {}
         if user_input is not None:
-            return self.async_create_entry(
-                title=user_input[CONF_CALLSIGN],
-                data=user_input,
-                unique_id=user_input[CONF_CALLSIGN],
-            )
+            try:
+                await _test_connect(
+                    callsign=config_entry.data[CONF_YOUR_CALLSIGN],
+                    port=APRSIS_USER_DEFINED_PORT,
+                    budlist=user_input[CONF_CALLSIGN],
+                )
+            except APRSWSApiClientAuthenticationError as exception:
+                LOGGER.warning(exception)
+                _errors["base"] = "auth"
+            except APRSWSApiClientCommunicationError as exception:
+                LOGGER.error(exception)
+                _errors["base"] = "connection"
+            except APRSWSApiClientError as exception:
+                LOGGER.exception(exception)
+                _errors["base"] = "unknown"
+            else:
+                return self.async_create_entry(
+                    title=user_input[CONF_CALLSIGN],
+                    data=user_input,
+                    unique_id=user_input[CONF_CALLSIGN],
+                )
 
         return self.async_show_form(
             step_id="user",

@@ -10,3 +10,5 @@ ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
 
 CONF_YOUR_CALLSIGN: Final = "your_callsign"
 CONF_CALLSIGN: Final = "callsign"
+
+APRSIS_USER_DEFINED_PORT: Final = 14580

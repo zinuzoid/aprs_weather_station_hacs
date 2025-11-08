@@ -10,11 +10,11 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
-from homeassistant.const import CONF_PORT, Platform
+from homeassistant.const import Platform
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import APRSWSApiClient
-from .const import CONF_YOUR_CALLSIGN, DOMAIN, LOGGER
+from .const import APRSIS_USER_DEFINED_PORT, CONF_YOUR_CALLSIGN, DOMAIN, LOGGER
 from .coordinator import APRSWSDataUpdateCoordinator
 from .data import APRSWSData
 
@@ -25,8 +25,6 @@ if TYPE_CHECKING:
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
-    Platform.BINARY_SENSOR,
-    Platform.SWITCH,
 ]
 
 
@@ -45,7 +43,7 @@ async def async_setup_entry(
     entry.runtime_data = APRSWSData(
         client=APRSWSApiClient(
             callsign=entry.data[CONF_YOUR_CALLSIGN],
-            port=14580,
+            port=APRSIS_USER_DEFINED_PORT,
             budlist=None,
         ),
         integration=async_get_loaded_integration(hass, entry.domain),

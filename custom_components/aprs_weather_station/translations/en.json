@@ -4,7 +4,8 @@
             "user": {
                 "description": "These information will be use by aprslib. See documentation https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is \n\nOnce submitted please continue to add weather station callsign in subentry -> add button.",
                 "data": {
-                    "your_callsign": "Your callsign"
+                    "your_callsign": "Your callsign",
+                    "callsign": "Callsign"
                 }
             }
         },
