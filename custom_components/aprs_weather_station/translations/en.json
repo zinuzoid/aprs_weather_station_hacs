@@ -2,10 +2,9 @@
     "config": {
         "step": {
             "user": {
-                "description": "If you need help with the configuration have a look here: https://github.com/ludeeus/integration_blueprint",
+                "description": "These information will be use by aprslib. See documentation https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is \n\nOnce submitted please continue to add weather station callsign in subentry -> add button.",
                 "data": {
-                    "username": "Username",
-                    "password": "Password"
+                    "your_callsign": "Your callsign"
                 }
             }
         },

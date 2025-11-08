@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_PORT
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 from slugify import slugify
 
@@ -14,13 +16,27 @@ from .api import (
     APRSWSApiClientCommunicationError,
     APRSWSApiClientError,
 )
-from .const import CONF_BUDLIST_FILTER, CONF_YOUR_CALLSIGN, DOMAIN, LOGGER
+from .const import (
+    CONF_CALLSIGN,
+    CONF_YOUR_CALLSIGN,
+    DOMAIN,
+    LOGGER,
+)
 
 
 class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for Blueprint."""
 
     VERSION = 1
+
+    @classmethod
+    @callback
+    def async_get_supported_subentry_types(
+        cls,
+        config_entry: config_entries.ConfigEntry,  # noqa: ARG003
+    ) -> dict[str, type[config_entries.ConfigSubentryFlow]]:
+        """Return subentries supported by this integration."""
+        return {"budlist": BudlistSubentryFlowHandler}
 
     async def async_step_user(
         self,
@@ -29,13 +45,8 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         _errors = {}
         if user_input is not None:
-            user_input[CONF_PORT] = int(user_input[CONF_PORT])
             try:
-                await self._test_connect(
-                    callsign=user_input[CONF_YOUR_CALLSIGN],
-                    port=user_input[CONF_PORT],
-                    budlist=user_input[CONF_BUDLIST_FILTER],
-                )
+                await _test_connect(callsign=user_input[CONF_YOUR_CALLSIGN], port=None)
             except APRSWSApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
                 _errors["base"] = "auth"
@@ -47,15 +58,11 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 _errors["base"] = "unknown"
             else:
                 await self.async_set_unique_id(
-                    unique_id=slugify(
-                        user_input[CONF_YOUR_CALLSIGN]
-                        + str(user_input[CONF_PORT])
-                        + user_input[CONF_BUDLIST_FILTER]
-                    )
+                    unique_id=slugify(user_input[CONF_YOUR_CALLSIGN])
                 )
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=user_input[CONF_BUDLIST_FILTER],
+                    title=user_input[CONF_YOUR_CALLSIGN],
                     data=user_input,
                 )
 
@@ -71,26 +78,55 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                             type=selector.TextSelectorType.TEXT,
                         ),
                     ),
+                },
+            ),
+            errors=_errors,
+        )
+
+
+class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
+    """Budlist Subentry."""
+
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.SubentryFlowResult:
+        """Subentry user flow."""
+        config_entry = self._get_entry()
+        if config_entry.state is not config_entries.ConfigEntryState.LOADED:
+            return self.async_abort(reason="config_entry_disabled")
+
+        _errors = {}
+        if user_input is not None:
+            return self.async_create_entry(
+                title=user_input[CONF_CALLSIGN],
+                data=user_input,
+                unique_id=user_input[CONF_CALLSIGN],
+            )
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {
                     vol.Required(
-                        CONF_PORT, default=(user_input or {}).get(CONF_PORT, 14580)
-                    ): selector.NumberSelector(
-                        selector.NumberSelectorConfig(
-                            mode=selector.NumberSelectorMode.BOX, min=1, max=65535
-                        )
-                    ),
-                    vol.Required(CONF_BUDLIST_FILTER): selector.TextSelector(
-                        selector.TextSelectorConfig(type=selector.TextSelectorType.TEXT)
+                        CONF_CALLSIGN,
+                    ): selector.TextSelector(
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.TEXT,
+                        ),
                     ),
                 },
             ),
             errors=_errors,
         )
 
-    async def _test_connect(self, callsign: str, port: int, budlist: str) -> None:
-        """Test connection."""
-        client = APRSWSApiClient(
-            callsign=callsign,
-            port=port,
-            budlist=budlist,
-        )
-        client.test_connection()
+
+async def _test_connect(
+    callsign: str, port: int | None, budlist: str | None = None
+) -> None:
+    """Test connection."""
+    client = APRSWSApiClient(
+        callsign=callsign,
+        port=port,
+        budlist=budlist,
+    )
+    client.test_connection()

@@ -48,7 +48,7 @@ class APRSWSSwitch(APRSWSEntity, SwitchEntity):
         entity_description: SwitchEntityDescription,
     ) -> None:
         """Initialize the switch class."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, entity_description)
         self.entity_description = entity_description
 
     @property

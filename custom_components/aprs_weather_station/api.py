@@ -29,15 +29,17 @@ class APRSWSApiClient:
     def __init__(
         self,
         callsign: str,
-        port: int,
-        budlist: str,
+        port: int | None,
+        budlist: str | None,
     ) -> None:
         """APRSWS API Client."""
         self._callsign = callsign
         self._port = port
         self._budlist = budlist
 
-    def _gen_filter_from_budlist(self) -> str:
+    def _gen_filter_from_budlist(self) -> str | None:
+        if self._budlist is None:
+            return None
         replace = self._budlist.strip().replace(",", "/")
         return f"b/{replace}"
 
@@ -45,14 +47,18 @@ class APRSWSApiClient:
         """Test connection to APRS-IS server."""
         ais_filter = self._gen_filter_from_budlist()
         LOGGER.info(
-            "Test connection with: callsign=%s port=%d budlist=%s",
+            "Test connection with: callsign=%s port=%s budlist=%s",
             self._callsign,
             self._port,
             ais_filter,
         )
         try:
-            ais = aprslib.IS(self._callsign, port=self._port)
-            ais.set_filter(ais_filter)
+            if self._port is not None:
+                ais = aprslib.IS(self._callsign, port=self._port)
+            else:
+                ais = aprslib.IS(self._callsign)
+            if ais_filter is not None:
+                ais.set_filter(ais_filter)
             ais.connect(retry=5)
             ais.close()
         except Exception as ex:

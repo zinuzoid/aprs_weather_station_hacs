@@ -52,7 +52,7 @@ class APRSWSBinarySensor(APRSWSEntity, BinarySensorEntity):
         entity_description: BinarySensorEntityDescription,
     ) -> None:
         """Initialize the binary_sensor class."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, entity_description)
         self.entity_description = entity_description
 
     @property

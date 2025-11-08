@@ -10,7 +10,7 @@ from .entity import APRSWSEntity
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+    from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
     from .coordinator import APRSWSDataUpdateCoordinator
     from .data import APRSWSConfigEntry
@@ -21,22 +21,31 @@ ENTITY_DESCRIPTIONS = (
         name="APRS Weather Station Sensor",
         icon="mdi:format-quote-close",
     ),
+    SensorEntityDescription(
+        key="bbb",
+        name="APRS Weather Station Sensor2",
+        icon="mdi:format-quote-close",
+    ),
 )
 
 
 async def async_setup_entry(
     hass: HomeAssistant,  # noqa: ARG001 Unused function argument: `hass`
     entry: APRSWSConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
-    async_add_entities(
-        APRSWSSensor(
-            coordinator=entry.runtime_data.coordinator,
-            entity_description=entity_description,
+    for subentry in entry.subentries.values():
+        async_add_entities(
+            (
+                APRSWSSensor(
+                    coordinator=entry.runtime_data.coordinator,
+                    entity_description=entity_description,
+                )
+                for entity_description in ENTITY_DESCRIPTIONS
+            ),
+            config_subentry_id=subentry.subentry_id,
         )
-        for entity_description in ENTITY_DESCRIPTIONS
-    )
 
 
 class APRSWSSensor(APRSWSEntity, SensorEntity):
@@ -48,7 +57,7 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
         entity_description: SensorEntityDescription,
     ) -> None:
         """Initialize the sensor class."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, entity_description)
         self.entity_description = entity_description
 
     @property
