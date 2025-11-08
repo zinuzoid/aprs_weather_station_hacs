@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "These information will be use by aprslib. See documentation https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is \n\nOnce submitted please continue to add weather station callsign in subentry -> add button.",
+                "description": "This information will be use by aprslib. See documentation https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is",
                 "data": {
                     "your_callsign": "Your callsign",
                     "callsign": "Callsign"
@@ -16,6 +16,32 @@
         },
         "abort": {
             "already_configured": "This entry is already configured."
+        },
+        "create_entry": {
+            "default": "Once finish, please continue to add weather station callsign in subentry -> \"Add callsign\" button."
+        }
+    },
+    "config_subentries": {
+        "budlist": {
+            "initiate_flow": {
+                "user": "Add callsign"
+            },
+            "step": {
+                "user": {
+                    "description": "Add weather station callsign",
+                    "data": {
+                        "callsign": "Callsign"
+                    }
+                }
+            },
+            "error": {
+                "auth": "Username/Password is wrong.",
+                "connection": "Unable to connect to the server.",
+                "unknown": "Unknown error occurred."
+            },
+            "abort": {
+                "already_configured": "This entry is already configured."
+            }
         }
     }
 }

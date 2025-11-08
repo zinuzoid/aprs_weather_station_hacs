@@ -138,7 +138,7 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
 
 
 async def _test_connect(
-    callsign: str, port: int | None, budlist: str | None = None
+    callsign: str, port: int | None, budlist: list[str] | None = None
 ) -> None:
     """Test connection."""
     client = APRSWSApiClient(

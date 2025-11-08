@@ -40,6 +40,8 @@ async def async_setup_entry(
         name=DOMAIN,
         update_interval=timedelta(hours=1),
     )
+    for subentries in entry.subentries.values():
+        pass
     entry.runtime_data = APRSWSData(
         client=APRSWSApiClient(
             callsign=entry.data[CONF_YOUR_CALLSIGN],
