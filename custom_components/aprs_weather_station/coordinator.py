@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from custom_components.aprs_weather_station.const import LOGGER
+
 from .api import (
     APRSWSApiClientAuthenticationError,
     APRSWSApiClientError,
@@ -24,6 +26,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> Any:
         """Update data via library."""
+        LOGGER.debug("_async_update_data")
         try:
             # return await self.config_entry.runtime_data.client.async_get_data()
             return {}

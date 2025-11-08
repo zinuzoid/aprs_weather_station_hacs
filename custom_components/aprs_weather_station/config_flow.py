@@ -102,7 +102,7 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
                 await _test_connect(
                     callsign=config_entry.data[CONF_YOUR_CALLSIGN],
                     port=APRSIS_USER_DEFINED_PORT,
-                    budlist=user_input[CONF_CALLSIGN],
+                    budlist=[user_input[CONF_CALLSIGN]],
                 )
             except APRSWSApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)

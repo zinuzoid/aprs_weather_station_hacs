@@ -35,12 +35,12 @@ class APRSWSApiClient:
         """APRSWS API Client."""
         self._callsign = callsign
         self._port = port
-        self._budlist = budlist
+        self.budlist = budlist
 
     def _gen_filter_from_budlist(self) -> str | None:
-        if not self._budlist:
+        if not self.budlist:
             return None
-        replace = "/".join(self._budlist)
+        replace = "/".join(self.budlist)
         return f"b/{replace}"
 
     def test_connection(self) -> None:

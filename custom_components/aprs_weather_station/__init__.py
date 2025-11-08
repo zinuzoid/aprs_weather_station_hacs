@@ -14,7 +14,12 @@ from homeassistant.const import Platform
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import APRSWSApiClient
-from .const import APRSIS_USER_DEFINED_PORT, CONF_YOUR_CALLSIGN, DOMAIN, LOGGER
+from .const import (
+    APRSIS_USER_DEFINED_PORT,
+    CONF_YOUR_CALLSIGN,
+    DOMAIN,
+    LOGGER,
+)
 from .coordinator import APRSWSDataUpdateCoordinator
 from .data import APRSWSData
 
@@ -38,10 +43,7 @@ async def async_setup_entry(
         hass=hass,
         logger=LOGGER,
         name=DOMAIN,
-        update_interval=timedelta(hours=1),
     )
-    for subentries in entry.subentries.values():
-        pass
     entry.runtime_data = APRSWSData(
         client=APRSWSApiClient(
             callsign=entry.data[CONF_YOUR_CALLSIGN],
