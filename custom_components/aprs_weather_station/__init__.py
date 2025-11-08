@@ -7,7 +7,6 @@ https://github.com/zinuzoid/aprs_weather_station_hacs
 
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
