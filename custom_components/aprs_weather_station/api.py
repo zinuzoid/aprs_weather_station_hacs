@@ -1,9 +1,11 @@
 """Sample API Client."""
 
 from __future__ import annotations
+from collections.abc import Callable
 
 import aprslib
 
+from .aprs_listener import APRSListener
 from .const import APRSIS_FULL_FEED_PORT, APRSIS_USER_DEFINED_PORT, LOGGER
 
 
@@ -34,6 +36,7 @@ class APRSWSApiClient:
         """APRSWS API Client."""
         self._callsign = callsign
         self.budlist = budlist
+        self._aprs_listener: APRSListener | None = None
 
     def _gen_filter_from_budlist(self) -> str | None:
         if not self.budlist:
@@ -60,3 +63,22 @@ class APRSWSApiClient:
         except Exception as ex:
             msg = f"Something wrong! - {ex}"
             raise APRSWSApiClientCommunicationError(msg) from ex
+
+    def start_listening(self, callback: Callable[[dict[str, str]]]) -> None:
+        """Start listening to APRS packet."""
+        LOGGER.debug("start_listening with budlist:", self._gen_filter_from_budlist())
+
+        self.stop_and_join()
+
+        self._aprs_listener = APRSListener(
+            callsign=self._callsign,
+            budlist_filter=self._gen_filter_from_budlist(),
+            callback=callback,
+        )
+        self._aprs_listener.start()
+
+    def stop_and_join(self) -> None:
+        """Stop and join thread."""
+        if self._aprs_listener:
+            self._aprs_listener.stop()
+            self._aprs_listener.join()

@@ -19,7 +19,7 @@ from .const import (
     LOGGER,
 )
 from .coordinator import APRSWSDataUpdateCoordinator
-from .data import APRSWSData
+from .data import APRSWSRuntimeData
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -42,7 +42,7 @@ async def async_setup_entry(
         logger=LOGGER,
         name=DOMAIN,
     )
-    entry.runtime_data = APRSWSData(
+    entry.runtime_data = APRSWSRuntimeData(
         client=APRSWSApiClient(
             callsign=entry.data[CONF_YOUR_CALLSIGN],
             budlist=None,

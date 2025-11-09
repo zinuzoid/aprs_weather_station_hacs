@@ -17,7 +17,6 @@ from .api import (
     APRSWSApiClientError,
 )
 from .const import (
-    APRSIS_USER_DEFINED_PORT,
     CONF_CALLSIGN,
     CONF_YOUR_CALLSIGN,
     DOMAIN,

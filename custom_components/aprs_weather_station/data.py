@@ -7,19 +7,36 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
+    from homeassistant.helpers.typing import StateType
     from homeassistant.loader import Integration
 
     from .api import APRSWSApiClient
     from .coordinator import APRSWSDataUpdateCoordinator
 
 
-type APRSWSConfigEntry = ConfigEntry[APRSWSData]
+type APRSWSConfigEntry = ConfigEntry[APRSWSRuntimeData]
 
 
 @dataclass
-class APRSWSData:
+class APRSWSRuntimeData:
     """Data for the APRS Weather Station."""
 
     client: APRSWSApiClient
     coordinator: APRSWSDataUpdateCoordinator
     integration: Integration
+
+
+@dataclass(frozen=True)
+class APRSWSSensorData:
+    """Data for each value."""
+
+    callsign: str
+    type: str
+
+    value: StateType
+    timestamp: int
+
+    @property
+    def key(self) -> str:
+        """Unique key for sensor."""
+        return f"{self.callsign}_{self.type}"
