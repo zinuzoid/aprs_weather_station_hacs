@@ -24,7 +24,7 @@
     "config_subentries": {
         "budlist": {
             "initiate_flow": {
-                "user": "Add callsign"
+                "user": "Add weather station"
             },
             "step": {
                 "user": {

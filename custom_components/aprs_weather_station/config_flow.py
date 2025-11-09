@@ -47,7 +47,7 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _errors = {}
         if user_input is not None:
             try:
-                await _test_connect(callsign=user_input[CONF_YOUR_CALLSIGN], port=None)
+                await _test_connect(callsign=user_input[CONF_YOUR_CALLSIGN])
             except APRSWSApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
                 _errors["base"] = "auth"
@@ -101,7 +101,6 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
             try:
                 await _test_connect(
                     callsign=config_entry.data[CONF_YOUR_CALLSIGN],
-                    port=APRSIS_USER_DEFINED_PORT,
                     budlist=[user_input[CONF_CALLSIGN]],
                 )
             except APRSWSApiClientAuthenticationError as exception:
@@ -137,13 +136,10 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
         )
 
 
-async def _test_connect(
-    callsign: str, port: int | None, budlist: list[str] | None = None
-) -> None:
+async def _test_connect(callsign: str, budlist: list[str] | None = None) -> None:
     """Test connection."""
     client = APRSWSApiClient(
         callsign=callsign,
-        port=port,
         budlist=budlist,
     )
     client.test_connection()

@@ -12,3 +12,4 @@ CONF_YOUR_CALLSIGN: Final = "your_callsign"
 CONF_CALLSIGN: Final = "callsign"
 
 APRSIS_USER_DEFINED_PORT: Final = 14580
+APRSIS_FULL_FEED_PORT: Final = 10152
