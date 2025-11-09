@@ -35,9 +35,8 @@ async def async_setup_entry(
     known_sensors: set[str] = set()
 
     def _check_device() -> None:
-        new_sensors = list(
-            filter(lambda s: s.key not in known_sensors, coordinator.data)
-        )
+        wind_sensor = list(filter(lambda s: s.type == "wind_speed", coordinator.data))
+        new_sensors = list(filter(lambda s: s.key not in known_sensors, wind_sensor))
         LOGGER.debug(
             "_check_device %s %s %s", entry.subentries, known_sensors, new_sensors
         )
@@ -58,14 +57,6 @@ async def async_setup_entry(
                     APRSWSSensor(
                         data=sensor,
                         coordinator=coordinator,
-                        entity_description=SensorEntityDescription(
-                            key=sensor.key,
-                            name=sensor.type,
-                            device_class=SensorDeviceClass.WIND_SPEED,
-                            icon="mdi:format-quote-close",
-                            state_class=SensorStateClass.MEASUREMENT,
-                            native_unit_of_measurement="m/s",
-                        ),
                     )
                 ],
                 config_subentry_id=subentry.subentry_id,
@@ -81,11 +72,21 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
 
     def __init__(
         self,
-        coordinator: APRSWSDataUpdateCoordinator,
-        entity_description: SensorEntityDescription,
         data: APRSWSSensorData,
+        coordinator: APRSWSDataUpdateCoordinator,
+        entity_description: SensorEntityDescription | None = None,
     ) -> None:
         """Initialize the sensor class."""
+        if entity_description is None:
+            entity_description = SensorEntityDescription(
+                key=data.key,
+                name=data.type,
+                device_class=SensorDeviceClass.WIND_SPEED,
+                icon="mdi:weather-windy",
+                state_class=SensorStateClass.MEASUREMENT,
+                native_unit_of_measurement="m/s",
+            )
+
         super().__init__(coordinator, entity_description)
         self.entity_description = entity_description
         self.data = data
@@ -111,5 +112,10 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
         if not sensor_data:
             return
 
+        LOGGER.debug(
+            "update sensor_data for %s with value %s",
+            sensor_data.key,
+            sensor_data.value,
+        )
         self.data = sensor_data
         self.async_write_ha_state()

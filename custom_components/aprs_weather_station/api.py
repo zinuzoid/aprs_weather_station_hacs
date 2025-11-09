@@ -1,12 +1,16 @@
 """Sample API Client."""
 
 from __future__ import annotations
-from collections.abc import Callable
+
+from typing import TYPE_CHECKING
 
 import aprslib
 
 from .aprs_listener import APRSListener
 from .const import APRSIS_FULL_FEED_PORT, APRSIS_USER_DEFINED_PORT, LOGGER
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class APRSWSApiClientError(Exception):
@@ -66,7 +70,9 @@ class APRSWSApiClient:
 
     def start_listening(self, callback: Callable[[dict[str, str]]]) -> None:
         """Start listening to APRS packet."""
-        LOGGER.debug("start_listening with budlist:", self._gen_filter_from_budlist())
+        LOGGER.debug(
+            "start_listening with budlist: %s", self._gen_filter_from_budlist()
+        )
 
         self.stop_and_join()
 
@@ -79,6 +85,8 @@ class APRSWSApiClient:
 
     def stop_and_join(self) -> None:
         """Stop and join thread."""
+        LOGGER.debug("stop_and_join()")
         if self._aprs_listener:
             self._aprs_listener.stop()
             self._aprs_listener.join()
+        LOGGER.debug("stop_and_join() done")

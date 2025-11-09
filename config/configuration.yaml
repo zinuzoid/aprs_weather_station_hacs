@@ -10,3 +10,4 @@ logger:
   default: info
   logs:
     custom_components.aprs_weather_station: debug
+    aprslib.inet.IS: debug

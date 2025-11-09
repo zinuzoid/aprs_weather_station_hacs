@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.helpers.typing import StateType
     from homeassistant.loader import Integration
+    from homeassistant.components.sensor import SensorDeviceClass
 
     from .api import APRSWSApiClient
     from .coordinator import APRSWSDataUpdateCoordinator
@@ -28,13 +29,13 @@ class APRSWSRuntimeData:
 
 @dataclass(frozen=True)
 class APRSWSSensorData:
-    """Data for each value."""
+    """Base class for sensor data."""
 
+    timestamp: int
     callsign: str
     type: str
 
-    value: StateType
-    timestamp: int
+    value: str | int | float | None
 
     @property
     def key(self) -> str:
