@@ -5,23 +5,46 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from homeassistant.components.sensor import (
-    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.core import callback
 
-from .const import CONF_CALLSIGN, LOGGER
+from .const import (
+    CONF_CALLSIGN,
+    LOGGER,
+    SENSOR_TYPE_TO_ENTITY_CATEGORY,
+    SENSOR_TYPE_TO_MDI_ICONS,
+    SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS,
+    SENSOR_TYPE_TO_SENSOR_STATE_CLASS,
+    SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT,
+)
 from .entity import APRSWSEntity
 
 if TYPE_CHECKING:
+    from datetime import datetime
+    from types import MappingProxyType
+
+    from homeassistant.config_entries import ConfigSubentry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
     from homeassistant.helpers.typing import StateType
 
     from .coordinator import APRSWSDataUpdateCoordinator
     from .data import APRSWSConfigEntry, APRSWSSensorData
+
+
+def _find_subentry(
+    subentries: MappingProxyType[str, ConfigSubentry], callsign: str
+) -> ConfigSubentry | None:
+    return next(
+        (
+            subentry
+            for subentry in subentries.values()
+            if subentry.data[CONF_CALLSIGN] == callsign
+        ),
+        None,
+    )
 
 
 async def async_setup_entry(
@@ -36,21 +59,16 @@ async def async_setup_entry(
 
     def _check_device() -> None:
         wind_sensor = list(filter(lambda s: s.type == "wind_speed", coordinator.data))
-        new_sensors = list(filter(lambda s: s.key not in known_sensors, wind_sensor))
+        new_sensors = list(
+            filter(lambda s: s.key not in known_sensors, coordinator.data)
+        )
         LOGGER.debug(
             "_check_device %s %s %s", entry.subentries, known_sensors, new_sensors
         )
         for sensor in list(new_sensors):
-            subentry = next(
-                (
-                    subentry
-                    for subentry in entry.subentries.values()
-                    if subentry.data[CONF_CALLSIGN] == sensor.callsign
-                ),
-                None,
-            )
+            subentry = _find_subentry(entry.subentries, sensor.callsign)
             if not subentry:
-                LOGGER.error("Cannot find subentry with %s", sensor.callsign)
+                LOGGER.error("Cannot find subentry %s", sensor.callsign)
                 continue
             async_add_entities(
                 [
@@ -62,7 +80,7 @@ async def async_setup_entry(
                 config_subentry_id=subentry.subentry_id,
             )
             known_sensors.add(sensor.key)
-            LOGGER.debug("added sensor %s", sensor)
+            LOGGER.debug("Added sensor %s", sensor)
 
     entry.async_on_unload(coordinator.async_add_listener(_check_device))
 
@@ -80,11 +98,15 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
         if entity_description is None:
             entity_description = SensorEntityDescription(
                 key=data.key,
-                name=data.type,
-                device_class=SensorDeviceClass.WIND_SPEED,
-                icon="mdi:weather-windy",
-                state_class=SensorStateClass.MEASUREMENT,
-                native_unit_of_measurement="m/s",
+                translation_key=data.type,
+                has_entity_name=True,
+                device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
+                icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
+                state_class=SENSOR_TYPE_TO_SENSOR_STATE_CLASS[data.type],
+                native_unit_of_measurement=SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT[
+                    data.type
+                ],
+                entity_category=SENSOR_TYPE_TO_ENTITY_CATEGORY[data.type],
             )
 
         super().__init__(coordinator, entity_description)
@@ -94,7 +116,7 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
             self.device_info.update(name=data.callsign)
 
     @property
-    def native_value(self) -> StateType:
+    def native_value(self) -> StateType | datetime:
         """Return the native value of the sensor."""
         return self.data.value
 

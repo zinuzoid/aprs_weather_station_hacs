@@ -45,10 +45,6 @@
         }
     },
     "entity": {
-        "sensor": {
-            "wind_speed": {
-                "name": "[%key:component::sensor::entity_component::wind_speed::name%]"
-            }
-        }
+        "sensor": {}
     }
 }

@@ -1,7 +1,9 @@
 """APRS packet parser for extracting sensor data."""
 
+from datetime import UTC, datetime
 from typing import Any
 
+from .const import LOGGER
 from .data import APRSWSSensorData
 
 
@@ -10,9 +12,34 @@ class APRSPacketParser:
 
     def parse(self, packet: dict[str, Any]) -> list[APRSWSSensorData]:
         """Parse an APRS packet and extract sensor data."""
+        timestamp = packet.get("timestamp")
+        callsign = packet.get("from")
+
+        if not timestamp or not callsign:
+            LOGGER.error("Packet doesn't include timestamp nor from! Skipping...")
+            return []
+
         sensor_data: list[APRSWSSensorData] = []
-        timestamp = packet.get("timestamp", 0)
-        callsign = packet.get("from", "")
+
+        # Add timestamp as a sensor type
+        sensor_data.append(
+            APRSWSSensorData(
+                timestamp=timestamp,
+                callsign=callsign,
+                type="timestamp",
+                value=datetime.fromtimestamp(timestamp, tz=UTC),
+            )
+        )
+
+        # Add message received sensor
+        sensor_data.append(
+            APRSWSSensorData(
+                timestamp=timestamp,
+                callsign=callsign,
+                type="message_received",
+                value=1,
+            )
+        )
 
         # Parse weather data if available
         weather = packet.get("weather")
@@ -24,6 +51,17 @@ class APRSPacketParser:
                         callsign=callsign,
                         type="wind_speed",
                         value=weather["wind_gust"],
+                    )
+                )
+
+            if "course" in packet:
+                # Add wind direction sensor
+                sensor_data.append(
+                    APRSWSSensorData(
+                        timestamp=timestamp,
+                        callsign=callsign,
+                        type="wind_direction",
+                        value=packet.get("course"),
                     )
                 )
 

@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
-    from homeassistant.helpers.typing import StateType
     from homeassistant.loader import Integration
-    from homeassistant.components.sensor import SensorDeviceClass
 
     from .api import APRSWSApiClient
     from .coordinator import APRSWSDataUpdateCoordinator
@@ -35,7 +34,7 @@ class APRSWSSensorData:
     callsign: str
     type: str
 
-    value: str | int | float | None
+    value: str | int | float | datetime | None
 
     @property
     def key(self) -> str:
