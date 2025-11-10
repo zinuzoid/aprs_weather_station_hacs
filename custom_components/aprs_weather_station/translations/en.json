@@ -47,7 +47,7 @@
     "entity": {
         "sensor": {
             "message_received": {
-                "name": "# message received"
+                "name": "#Message received"
             },
             "last_timestamp": {
                 "name": "Last timestamp"
