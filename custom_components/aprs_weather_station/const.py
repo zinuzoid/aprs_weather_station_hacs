@@ -27,7 +27,7 @@ APRSIS_FULL_FEED_PORT: Final = 10152
 
 SENSOR_TYPE_TO_MDI_ICONS: Final[dict[str, str]] = {
     "timestamp": "mdi:clock-outline",
-    "message_received": "mdi:message-check",
+    "packet_received": "mdi:message-check",
     "wind_speed": "mdi:weather-windy",
     "wind_direction": "mdi:compass",
     "wind_gust": "mdi:weather-windy-variant",
@@ -41,7 +41,7 @@ SENSOR_TYPE_TO_MDI_ICONS: Final[dict[str, str]] = {
 
 SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
     "timestamp": SensorStateClass.TOTAL_INCREASING,
-    "message_received": SensorStateClass.TOTAL_INCREASING,
+    "packet_received": SensorStateClass.TOTAL_INCREASING,
     "wind_speed": SensorStateClass.MEASUREMENT,
     "wind_direction": SensorStateClass.MEASUREMENT_ANGLE,
     "wind_gust": SensorStateClass.MEASUREMENT,
@@ -55,7 +55,7 @@ SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
 
 SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {
     "timestamp": None,
-    "message_received": None,
+    "packet_received": None,
     "wind_speed": UnitOfSpeed.METERS_PER_SECOND,
     "wind_direction": DEGREE,
     "wind_gust": UnitOfSpeed.METERS_PER_SECOND,
@@ -69,7 +69,7 @@ SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {
 
 SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS: Final[dict[str, SensorDeviceClass | None]] = {
     "timestamp": SensorDeviceClass.TIMESTAMP,
-    "message_received": None,
+    "packet_received": None,
     "wind_speed": SensorDeviceClass.WIND_SPEED,
     "wind_direction": SensorDeviceClass.WIND_DIRECTION,
     "wind_gust": SensorDeviceClass.WIND_SPEED,
