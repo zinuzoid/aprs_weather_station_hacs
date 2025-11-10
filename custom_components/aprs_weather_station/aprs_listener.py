@@ -11,7 +11,7 @@ import aprslib.exceptions
 from .const import LOGGER
 
 FAKE_DATA = {
-    "raw": "G4ZMG>APRS,TCPIP*,qAC,T2SYDNEY:@100100z5205.65N/00219.62W_202/008g013t054r001p021P001h98b10038L000.WFL",
+    "raw": "G4ZMG>APRS,TCPIP*,qAC,T2SYDNEY:@100100z5205.65N/00219.62W_202/008g013t054r001p021P001h98b10038L000.WFL",  # noqa: E501
     "from": "G4ZMG",
     "to": "APRS",
     "path": ["TCPIP*", "qAC", "T2SYDNEY"],
@@ -42,12 +42,12 @@ FAKE_DATA = {
 
 
 class APRSListener(threading.Thread):
-    """A threaded APRS-IS listener that receives packets and routes them to callbacks."""
+    """APRS-IS listener thread that receives packets and routes them to callbacks."""
 
     MAX_RETRIES = 3
     RETRY_DELAY = 5  # seconds
 
-    SEND_FAKE_DATA = True
+    SEND_FAKE_DATA = False
 
     def __init__(
         self,

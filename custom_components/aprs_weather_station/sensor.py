@@ -58,7 +58,6 @@ async def async_setup_entry(
     known_sensors: set[str] = set()
 
     def _check_device() -> None:
-        wind_sensor = list(filter(lambda s: s.type == "wind_speed", coordinator.data))
         new_sensors = list(
             filter(lambda s: s.key not in known_sensors, coordinator.data)
         )
