@@ -51,6 +51,9 @@
             },
             "last_timestamp": {
                 "name": "Last timestamp"
+            },
+            "wind_gust": {
+                "name": "Wind gust speed"
             }
         }
     }
