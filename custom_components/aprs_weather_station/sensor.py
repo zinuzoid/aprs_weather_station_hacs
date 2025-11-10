@@ -63,7 +63,10 @@ async def async_setup_entry(
             filter(lambda s: s.key not in known_sensors, coordinator.data)
         )
         LOGGER.debug(
-            "_check_device %s %s %s", entry.subentries, known_sensors, new_sensors
+            "_check_device entry.subentries:%s\nknown_sensors:%s\nnew_sensors:%s",
+            entry.subentries,
+            known_sensors,
+            new_sensors,
         )
         for sensor in list(new_sensors):
             if sensor.type == "is_connected":
@@ -197,7 +200,7 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
             return
 
         if self.data and self.data.timestamp == new_data.timestamp:
-            LOGGER.error("found duplicated timestamp, ignore data...")
+            LOGGER.warning("found duplicated timestamp, ignore data...")
             return
 
         LOGGER.debug(
@@ -231,18 +234,22 @@ class APRSWSPacketReceivedSensor(APRSWSSensor):
             return
 
         if self.data.timestamp == new_data.timestamp:
-            LOGGER.error("found duplicated timestamp, ignore data...")
+            LOGGER.warning("found duplicated timestamp, ignore data...")
             return
 
         new_data_copy = APRSWSSensorData.from_other_with_new_value(
             new_data,
             (
-                new_data.value
-                if isinstance(new_data.value, int)
-                else 1 + self.data.value
-                if isinstance(self.data.value, int)
-                else 0
+                (new_data.value if isinstance(new_data.value, int) else 1)
+                + (self.data.value if isinstance(self.data.value, int) else 0)
             ),
+        )
+
+        LOGGER.debug(
+            "self.data.value=%s new_data.value=%s new_data_copy.value=%s",
+            self.data.value,
+            new_data.value,
+            new_data_copy.value,
         )
 
         LOGGER.debug(

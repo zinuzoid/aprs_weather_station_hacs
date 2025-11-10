@@ -72,8 +72,8 @@ FAKE_DATA2 = {
 class APRSListener(threading.Thread):
     """APRS-IS listener thread that receives packets and routes them to callbacks."""
 
-    MAX_RETRIES = 3
     RETRY_DELAY = 5  # seconds
+    MAX_RETRIES = int(5 * 60 / RETRY_DELAY)  #  try for 5 minutes
 
     SEND_FAKE_DATA = False
 
@@ -129,7 +129,8 @@ class APRSListener(threading.Thread):
             # Send fake data after 3 seconds for testing
             time.sleep(3)
             self._consumer_callback(FAKE_DATA1)
-            self._consumer_callback(FAKE_DATA2)
+            time.sleep(3)
+            self._consumer_callback(FAKE_DATA1)
 
         try:
             # Proceed with normal connection with retry logic
