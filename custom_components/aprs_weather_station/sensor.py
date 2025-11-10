@@ -79,12 +79,20 @@ async def async_setup_entry(
                 if not subentry:
                     LOGGER.error("Cannot find subentry %s", sensor.callsign)
                     continue
-                entities = [
-                    APRSWSSensor(
-                        data=sensor,
-                        coordinator=coordinator,
-                    )
-                ]
+                if sensor.type == "packet_received":
+                    entities = [
+                        APRSWSPacketReceivedSensor(
+                            data=sensor,
+                            coordinator=coordinator,
+                        )
+                    ]
+                else:
+                    entities = [
+                        APRSWSSensor(
+                            data=sensor,
+                            coordinator=coordinator,
+                        )
+                    ]
                 subentry_id = subentry.subentry_id
             async_add_entities(
                 entities,

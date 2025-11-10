@@ -44,13 +44,13 @@ class APRSPacketParser:
         # Parse weather data if available
         weather = packet.get("weather")
         if weather:
-            if "speed" in packet:
+            if "wind_speed" in weather:
                 sensor_data.append(
                     APRSWSSensorData(
                         timestamp=timestamp,
                         callsign=callsign,
                         type="wind_speed",
-                        value=packet["speed"],
+                        value=weather["wind_speed"],
                     )
                 )
 

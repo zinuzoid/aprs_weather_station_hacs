@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
-from homeassistant.const import Platform
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.loader import async_get_loaded_integration
 
 from .api import APRSWSApiClient
@@ -55,6 +55,10 @@ async def async_setup_entry(
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
+    hass.bus.async_listen_once(
+        EVENT_HOMEASSISTANT_STOP, lambda _: entry.runtime_data.client.stop_and_join()
+    )
 
     return True
 
