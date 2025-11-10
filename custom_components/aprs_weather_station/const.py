@@ -36,6 +36,7 @@ SENSOR_TYPE_TO_MDI_ICONS: Final[dict[str, str]] = {
     "humidity": "mdi:water-percent",
     "atmospheric_pressure": "mdi:gauge",
     "illuminance": "mdi:brightness-5",
+    "is_connected": "mdi:connection",
 }
 
 SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
@@ -49,6 +50,7 @@ SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
     "humidity": SensorStateClass.MEASUREMENT,
     "atmospheric_pressure": SensorStateClass.MEASUREMENT,
     "illuminance": SensorStateClass.MEASUREMENT,
+    "is_connected": SensorStateClass.MEASUREMENT,
 }
 
 SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {
@@ -62,6 +64,7 @@ SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {
     "humidity": PERCENTAGE,
     "atmospheric_pressure": UnitOfPressure.HPA,
     "illuminance": LIGHT_LUX,
+    "is_connected": None,
 }
 
 SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS: Final[dict[str, SensorDeviceClass | None]] = {
@@ -75,4 +78,5 @@ SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS: Final[dict[str, SensorDeviceClass | None]] =
     "humidity": SensorDeviceClass.HUMIDITY,
     "atmospheric_pressure": SensorDeviceClass.ATMOSPHERIC_PRESSURE,
     "illuminance": SensorDeviceClass.ILLUMINANCE,
+    "is_connected": SensorDeviceClass.ENUM,
 }

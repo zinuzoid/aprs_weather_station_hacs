@@ -65,21 +65,32 @@ async def async_setup_entry(
             "_check_device %s %s %s", entry.subentries, known_sensors, new_sensors
         )
         for sensor in list(new_sensors):
-            subentry = _find_subentry(entry.subentries, sensor.callsign)
-            if not subentry:
-                LOGGER.error("Cannot find subentry %s", sensor.callsign)
-                continue
-            async_add_entities(
-                [
+            if sensor.type == "is_connected":
+                entities = [
                     APRSWSSensor(
                         data=sensor,
                         coordinator=coordinator,
                     )
-                ],
-                config_subentry_id=subentry.subentry_id,
+                ]
+                subentry_id = None
+            else:
+                subentry = _find_subentry(entry.subentries, sensor.callsign)
+                if not subentry:
+                    LOGGER.error("Cannot find subentry %s", sensor.callsign)
+                    continue
+                entities = [
+                    APRSWSSensor(
+                        data=sensor,
+                        coordinator=coordinator,
+                    )
+                ]
+                subentry_id = subentry.subentry_id
+            async_add_entities(
+                entities,
+                config_subentry_id=subentry_id,
             )
             known_sensors.add(sensor.key)
-            LOGGER.debug("Added sensor %s", sensor)
+            LOGGER.debug("Added sensor %s to %s", sensor, subentry_id)
 
     entry.async_on_unload(coordinator.async_add_listener(_check_device))
 
@@ -121,6 +132,19 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
                     ],
                     entity_category=EntityCategory.DIAGNOSTIC,
                 )
+            elif data.type == "is_connected":
+                entity_description = SensorEntityDescription(
+                    key=data.key,
+                    translation_key="is_connected",
+                    has_entity_name=True,
+                    device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
+                    icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
+                    state_class=SENSOR_TYPE_TO_SENSOR_STATE_CLASS[data.type],
+                    native_unit_of_measurement=SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT[
+                        data.type
+                    ],
+                    entity_category=EntityCategory.DIAGNOSTIC,
+                )
             else:
                 entity_description = SensorEntityDescription(
                     key=data.key,
@@ -134,7 +158,7 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
                     ],
                 )
 
-        super().__init__(coordinator, entity_description)
+        super().__init__(coordinator, entity_description, data.callsign)
         self.entity_description = entity_description
         self.data = data
         if self.device_info:

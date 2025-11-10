@@ -23,6 +23,7 @@ class APRSWSEntity(CoordinatorEntity[APRSWSDataUpdateCoordinator]):
         self,
         coordinator: APRSWSDataUpdateCoordinator,
         entity_description: EntityDescription,
+        device_id: str,
     ) -> None:
         """Initialize."""
         super().__init__(coordinator)
@@ -31,7 +32,7 @@ class APRSWSEntity(CoordinatorEntity[APRSWSDataUpdateCoordinator]):
             identifiers={
                 (
                     coordinator.config_entry.domain,
-                    coordinator.config_entry.entry_id,
+                    device_id,
                 ),
             },
         )

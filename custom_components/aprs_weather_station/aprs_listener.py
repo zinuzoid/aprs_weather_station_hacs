@@ -10,7 +10,7 @@ import aprslib.exceptions
 
 from .const import LOGGER
 
-FAKE_DATA = {
+FAKE_DATA1 = {
     "raw": "G4ZMG>APRS,TCPIP*,qAC,T2SYDNEY:@100100z5205.65N/00219.62W_202/008g013t054r001p021P001h98b10038L000.WFL",  # noqa: E501
     "from": "G4ZMG",
     "to": "APRS",
@@ -37,6 +37,34 @@ FAKE_DATA = {
         "humidity": 98,
         "pressure": 1003.8,
         "luminosity": 0,
+    },
+}
+
+FAKE_DATA2 = {
+    "raw": "G8PZT>APXR04,qAO,G6JVY-10:@101119/5224.00N/00215.00W_000/000g000t050r000p000P028h83b0000 Kidderminster, UK {XrPi}",  # noqa: E501
+    "from": "G8PZT",
+    "to": "APXR04",
+    "path": ["qAO", "G6JVY-10"],
+    "via": "G6JVY-10",
+    "messagecapable": True,
+    "raw_timestamp": "101119/",
+    "timestamp": 1762773540,
+    "format": "uncompressed",
+    "posambiguity": 0,
+    "symbol": "_",
+    "symbol_table": "/",
+    "latitude": 52.4,
+    "longitude": -2.25,
+    "comment": "Kidderminster, UK {XrPi}",
+    "weather": {
+        "wind_direction": 0,
+        "wind_speed": 0.0,
+        "wind_gust": 0.0,
+        "temperature": 10.0,
+        "rain_1h": 0.0,
+        "rain_24h": 0.0,
+        "rain_since_midnight": 7.112,
+        "humidity": 83,
     },
 }
 
@@ -100,7 +128,8 @@ class APRSListener(threading.Thread):
         if self.SEND_FAKE_DATA:
             # Send fake data after 3 seconds for testing
             time.sleep(3)
-            self._consumer_callback(FAKE_DATA)
+            self._consumer_callback(FAKE_DATA1)
+            self._consumer_callback(FAKE_DATA2)
 
         try:
             # Proceed with normal connection with retry logic
@@ -109,10 +138,12 @@ class APRSListener(threading.Thread):
             if self._budlist_filter:
                 self._ais.set_filter(self._budlist_filter)
             self._ais.consumer(self._consumer_callback)
-        except ValueError as e:
-            # Socket was closed (file descriptor is -1), this is expected when stopping
-            LOGGER.warning("Consumer stopped: %s", e)
-        except (OSError, ConnectionError, aprslib.exceptions.GenericError) as e:
+        except (
+            OSError,
+            ValueError,
+            ConnectionError,
+            aprslib.exceptions.GenericError,
+        ) as e:
             # Connection failed or socket was closed from main thread
             LOGGER.exception(e)
         except Exception as e:  # noqa: BLE001

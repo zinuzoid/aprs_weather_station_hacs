@@ -83,6 +83,10 @@ class APRSWSApiClient:
         )
         self._aprs_listener.start()
 
+    def is_connected(self) -> bool | None:
+        """Return if aprs client is connected."""
+        return self._aprs_listener.is_connected() if self._aprs_listener else None
+
     def stop_and_join(self) -> None:
         """Stop and join thread."""
         LOGGER.debug("stop_and_join()")

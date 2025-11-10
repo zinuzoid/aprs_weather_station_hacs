@@ -7,6 +7,7 @@ https://github.com/zinuzoid/aprs_weather_station_hacs
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from homeassistant.const import Platform
@@ -38,9 +39,7 @@ async def async_setup_entry(
 ) -> bool:
     """Set up this integration using UI."""
     coordinator = APRSWSDataUpdateCoordinator(
-        hass=hass,
-        logger=LOGGER,
-        name=DOMAIN,
+        hass=hass, logger=LOGGER, name=DOMAIN, update_interval=timedelta(minutes=1)
     )
     entry.runtime_data = APRSWSRuntimeData(
         client=APRSWSApiClient(

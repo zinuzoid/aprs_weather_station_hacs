@@ -54,6 +54,9 @@
             },
             "wind_gust": {
                 "name": "Wind gust speed"
+            },
+            "is_connected": {
+                "name": "Is connected"
             }
         }
     }

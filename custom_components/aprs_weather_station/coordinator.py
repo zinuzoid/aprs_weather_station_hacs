@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from time import time
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -34,17 +35,27 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
 
     async def _async_update_data(self) -> list[APRSWSSensorData]:
         """Update data via library."""
-        client = self.config_entry.runtime_data.client
         LOGGER.debug("_async_update_data")
+        client = self.config_entry.runtime_data.client
+        data = [
+            APRSWSSensorData(
+                timestamp=int(time()),
+                callsign="SELF",
+                type="is_connected",
+                value=client.is_connected(),
+            )
+        ]
+
         budlist = [e.data[CONF_CALLSIGN] for e in self.config_entry.subentries.values()]
         if not budlist:
             LOGGER.warning("budlist is None, skip start_listening!")
-            return []
+            return data
 
-        client.budlist = budlist
-        client.start_listening(self.aprs_callback)
+        if budlist != client.budlist:
+            client.budlist = budlist
+            client.start_listening(self.aprs_callback)
 
-        return []
+        return data
 
     async def async_shutdown(self) -> None:
         """Run shutdown clean up."""
