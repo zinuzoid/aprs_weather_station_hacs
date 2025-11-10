@@ -37,6 +37,18 @@ class APRSWSSensorData:
 
     value: str | int | float | datetime | None
 
+    @classmethod
+    def from_other_with_new_value(
+        cls, other: APRSWSSensorData, value: str | float | datetime | None
+    ) -> APRSWSSensorData:
+        """Create copy with new value."""
+        return APRSWSSensorData(
+            timestamp=other.timestamp,
+            callsign=other.callsign,
+            type=other.type,
+            value=value,
+        )
+
     @property
     def key(self) -> str:
         """Unique key for sensor."""

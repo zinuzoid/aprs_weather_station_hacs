@@ -8,10 +8,10 @@ from homeassistant.const import (
     DEGREE,
     LIGHT_LUX,
     PERCENTAGE,
+    UnitOfPrecipitationDepth,
     UnitOfPressure,
     UnitOfSpeed,
     UnitOfTemperature,
-    UnitOfVolumetricFlux,
 )
 
 LOGGER: Logger = getLogger(__package__)
@@ -60,7 +60,7 @@ SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {
     "wind_direction": DEGREE,
     "wind_gust": UnitOfSpeed.METERS_PER_SECOND,
     "temperature": UnitOfTemperature.CELSIUS,
-    "precipitation": UnitOfVolumetricFlux.MILLIMETERS_PER_HOUR,
+    "precipitation": UnitOfPrecipitationDepth.MILLIMETERS,
     "humidity": PERCENTAGE,
     "atmospheric_pressure": UnitOfPressure.HPA,
     "illuminance": LIGHT_LUX,

@@ -46,11 +46,11 @@
     },
     "entity": {
         "sensor": {
-            "message_received": {
-                "name": "#Message received"
+            "packet_received": {
+                "name": "#Packet received"
             },
             "last_timestamp": {
-                "name": "Last timestamp"
+                "name": "Last packet timestamp"
             },
             "wind_gust": {
                 "name": "Wind gust speed"

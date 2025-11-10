@@ -40,7 +40,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
         data = [
             APRSWSSensorData(
                 timestamp=int(time()),
-                callsign="SELF",
+                callsign="APRS-IS",
                 type="is_connected",
                 value=client.is_connected(),
             )

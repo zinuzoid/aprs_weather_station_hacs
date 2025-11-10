@@ -19,6 +19,7 @@ from .const import (
     SENSOR_TYPE_TO_SENSOR_STATE_CLASS,
     SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT,
 )
+from .data import APRSWSSensorData
 from .entity import APRSWSEntity
 
 if TYPE_CHECKING:
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
     from homeassistant.helpers.typing import StateType
 
     from .coordinator import APRSWSDataUpdateCoordinator
-    from .data import APRSWSConfigEntry, APRSWSSensorData
+    from .data import APRSWSConfigEntry
 
 
 def _find_subentry(
@@ -119,10 +120,10 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
                     ],
                     entity_category=EntityCategory.DIAGNOSTIC,
                 )
-            elif data.type == "message_received":
+            elif data.type == "packet_received":
                 entity_description = SensorEntityDescription(
                     key=data.key,
-                    translation_key="message_received",
+                    translation_key="packet_received",
                     has_entity_name=True,
                     device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
                     icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
@@ -169,24 +170,77 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
         """Return the native value of the sensor."""
         return self.data.value
 
+    @staticmethod
+    def _find_sensor_data(
+        sensors: list[APRSWSSensorData], key: str
+    ) -> APRSWSSensorData | None:
+        return next(
+            (data for data in sensors if data.key == key),
+            None,
+        )
+
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
-        sensor_data = next(
-            (
-                data
-                for data in self.coordinator.data
-                if data.key == self.entity_description.key
-            ),
-            None,
+        new_data = self._find_sensor_data(
+            self.coordinator.data, self.entity_description.key
         )
-        if not sensor_data:
+        if not new_data:
+            return
+
+        if self.data and self.data.timestamp == new_data.timestamp:
+            LOGGER.error("found duplicated timestamp, ignore data...")
             return
 
         LOGGER.debug(
             "update sensor_data for %s with value %s",
-            sensor_data.key,
-            sensor_data.value,
+            new_data.key,
+            new_data.value,
         )
-        self.data = sensor_data
+        self.data = new_data
+        self.async_write_ha_state()
+
+
+class APRSWSPacketReceivedSensor(APRSWSSensor):
+    """Sensor for packet received with incremental counter."""
+
+    def __init__(
+        self,
+        data: APRSWSSensorData,
+        coordinator: APRSWSDataUpdateCoordinator,
+        entity_description: SensorEntityDescription | None = None,
+    ) -> None:
+        """Initialize the sensor class."""
+        super().__init__(data, coordinator, entity_description)
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        new_data = self._find_sensor_data(
+            self.coordinator.data, self.entity_description.key
+        )
+        if not new_data:
+            return
+
+        if self.data.timestamp == new_data.timestamp:
+            LOGGER.error("found duplicated timestamp, ignore data...")
+            return
+
+        new_data_copy = APRSWSSensorData.from_other_with_new_value(
+            new_data,
+            (
+                new_data.value
+                if isinstance(new_data.value, int)
+                else 1 + self.data.value
+                if isinstance(self.data.value, int)
+                else 0
+            ),
+        )
+
+        LOGGER.debug(
+            "update sensor_data for %s with value %s",
+            new_data_copy.key,
+            new_data_copy.value,
+        )
+        self.data = new_data_copy
         self.async_write_ha_state()

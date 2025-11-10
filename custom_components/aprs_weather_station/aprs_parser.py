@@ -31,12 +31,12 @@ class APRSPacketParser:
             )
         )
 
-        # Add message received sensor
+        # Add packet received sensor
         sensor_data.append(
             APRSWSSensorData(
                 timestamp=timestamp,
                 callsign=callsign,
-                type="message_received",
+                type="packet_received",
                 value=1,
             )
         )
