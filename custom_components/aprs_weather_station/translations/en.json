@@ -45,6 +45,13 @@
         }
     },
     "entity": {
-        "sensor": {}
+        "sensor": {
+            "message_received": {
+                "name": "# message received"
+            },
+            "last_timestamp": {
+                "name": "Last timestamp"
+            }
+        }
     }
 }

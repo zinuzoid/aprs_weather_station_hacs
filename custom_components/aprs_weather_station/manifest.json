@@ -9,7 +9,7 @@
   "iot_class": "cloud_push",
   "issue_tracker": "https://github.com/zinuzoid/aprs_weather_station_hacs/issues",
   "requirements": [
-    "aprslib==0.7.2"
+    "aprslib @ git+https://github.com/shackrat/aprs-python@master"
   ],
   "version": "0.1.0"
 }

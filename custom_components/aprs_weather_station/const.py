@@ -8,7 +8,6 @@ from homeassistant.const import (
     DEGREE,
     LIGHT_LUX,
     PERCENTAGE,
-    EntityCategory,
     UnitOfPressure,
     UnitOfSpeed,
     UnitOfTemperature,
@@ -72,16 +71,4 @@ SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS: Final[dict[str, SensorDeviceClass | None]] =
     "humidity": SensorDeviceClass.HUMIDITY,
     "atmospheric_pressure": SensorDeviceClass.ATMOSPHERIC_PRESSURE,
     "illuminance": SensorDeviceClass.ILLUMINANCE,
-}
-
-SENSOR_TYPE_TO_ENTITY_CATEGORY: Final[dict[str, EntityCategory | None]] = {
-    "timestamp": EntityCategory.DIAGNOSTIC,
-    "message_received": EntityCategory.DIAGNOSTIC,
-    "wind_speed": None,
-    "wind_direction": None,
-    "temperature": None,
-    "precipitation": None,
-    "humidity": None,
-    "atmospheric_pressure": None,
-    "illuminance": None,
 }
