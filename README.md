@@ -18,12 +18,12 @@ APRS is an amateur radio-based system for real-time digital communications of in
 | Sensor Type | Data Source | Unit | Description |
 |-------------|-------------|------|-------------|
 | **timestamp** | `packet["timestamp"]` | datetime | Timestamp when the packet was received |
-| **message_received** | counter | - | Message reception indicator (value: 1) |
+| **packet_received** | local counter | - | Diagnostic data on how many packet received in current runtime |
 | **wind_speed** | `packet["speed"]` | m/s | Current wind speed |
 | **wind_direction** | `packet["course"]` | ° | Wind direction in degrees |
 | **wind_gust** | `weather["wind_gust"]` | m/s | Wind gust speed |
 | **temperature** | `weather["temperature"]` | °C | Ambient temperature |
-| **precipitation** | `weather["rain_1h"]` | mm/h | Rainfall in last hour |
+| **precipitation** | `weather["rain_1h"]` | mm | Rainfall in last hour |
 | **humidity** | `weather["humidity"]` | % | Relative humidity |
 | **atmospheric_pressure** | `weather["pressure"]` | hPa | Barometric pressure |
 | **illuminance** | `weather["luminosity"]` | lx | Light level/brightness |
