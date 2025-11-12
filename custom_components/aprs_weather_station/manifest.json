@@ -11,5 +11,5 @@
   "requirements": [
     "aprslib@git+https://github.com/shackrat/aprs-python@master"
   ],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }

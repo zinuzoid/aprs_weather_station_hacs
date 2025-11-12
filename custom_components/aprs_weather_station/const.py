@@ -17,7 +17,7 @@ from homeassistant.const import (
 LOGGER: Logger = getLogger(__package__)
 
 DOMAIN = "aprs_weather_station"
-ATTRIBUTION = "Data provided by http://jsonplaceholder.typicode.com/"
+ATTRIBUTION = "Data provided by https://www.aprs-is.net/"
 
 CONF_YOUR_CALLSIGN: Final = "your_callsign"
 CONF_CALLSIGN: Final = "callsign"
@@ -36,10 +36,11 @@ SENSOR_TYPE_TO_MDI_ICONS: Final[dict[str, str]] = {
     "humidity": "mdi:water-percent",
     "atmospheric_pressure": "mdi:gauge",
     "illuminance": "mdi:brightness-5",
+    "location": "mdi:map-marker",
     "is_connected": "mdi:connection",
 }
 
-SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass | None]] = {
+SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
     "timestamp": SensorStateClass.TOTAL_INCREASING,
     "packet_received": SensorStateClass.TOTAL_INCREASING,
     "wind_speed": SensorStateClass.MEASUREMENT,
@@ -50,7 +51,7 @@ SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass | None]] = {
     "humidity": SensorStateClass.MEASUREMENT,
     "atmospheric_pressure": SensorStateClass.MEASUREMENT,
     "illuminance": SensorStateClass.MEASUREMENT,
-    "is_connected": None,
+    "is_connected": SensorStateClass.MEASUREMENT,
 }
 
 SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {

@@ -60,7 +60,10 @@ async def async_setup_entry(
 
     def _check_device() -> None:
         new_sensors = list(
-            filter(lambda s: s.key not in known_sensors, coordinator.data)
+            filter(
+                lambda s: s.key not in known_sensors and s.type != "location",
+                coordinator.data,
+            )
         )
         LOGGER.debug(
             "_check_device entry.subentries:%s\nknown_sensors:%s\nnew_sensors:%s",
