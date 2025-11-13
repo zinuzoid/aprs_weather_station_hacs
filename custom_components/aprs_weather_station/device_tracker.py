@@ -8,7 +8,6 @@ from homeassistant.components.device_tracker.config_entry import (
     TrackerEntity,
     TrackerEntityDescription,
 )
-from homeassistant.const import EntityCategory
 from homeassistant.core import callback
 
 from .const import (
