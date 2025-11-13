@@ -40,7 +40,7 @@ SENSOR_TYPE_TO_MDI_ICONS: Final[dict[str, str]] = {
     "is_connected": "mdi:connection",
 }
 
-SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
+SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass | None]] = {
     "timestamp": SensorStateClass.TOTAL_INCREASING,
     "packet_received": SensorStateClass.TOTAL_INCREASING,
     "wind_speed": SensorStateClass.MEASUREMENT,
@@ -51,7 +51,7 @@ SENSOR_TYPE_TO_SENSOR_STATE_CLASS: Final[dict[str, SensorStateClass]] = {
     "humidity": SensorStateClass.MEASUREMENT,
     "atmospheric_pressure": SensorStateClass.MEASUREMENT,
     "illuminance": SensorStateClass.MEASUREMENT,
-    "is_connected": SensorStateClass.MEASUREMENT,
+    "is_connected": None,
 }
 
 SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT: Final[dict[str, str | None]] = {

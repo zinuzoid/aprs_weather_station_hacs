@@ -102,7 +102,6 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
                 translation_key=data.type,
                 has_entity_name=True,
                 icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
-                entity_category=EntityCategory.DIAGNOSTIC,
             )
 
         super().__init__(coordinator, entity_description, data.callsign)
@@ -154,7 +153,6 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
         LOGGER.debug(
             "update sensor_data for %s with value %s %s",
             new_data.key,
-            new_data.value,
         )
         self.data = new_data
         self.async_write_ha_state()

@@ -58,6 +58,11 @@
             "is_connected": {
                 "name": "Is connected"
             }
+        },
+        "device_tracker": {
+            "location": {
+                "name": "Location"
+            }
         }
     }
 }
