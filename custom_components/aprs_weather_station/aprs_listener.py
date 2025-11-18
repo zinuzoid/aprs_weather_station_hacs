@@ -74,6 +74,7 @@ class APRSListener(threading.Thread):
 
     RETRY_DELAY = 5  # seconds
     MAX_RETRIES = int(5 * 60 / RETRY_DELAY)  #  try for 5 minutes
+    MAX_RECONNECTS = 10  # Maximum reconnection attempts after ConnectionDrop
 
     SEND_FAKE_DATA = False
 
@@ -133,12 +134,42 @@ class APRSListener(threading.Thread):
             self._consumer_callback(FAKE_DATA1)
 
         try:
-            # Proceed with normal connection with retry logic
-            self._connect_with_retry()
+            # Main consumer loop with automatic reconnection
+            reconnect_attempts = 0
+            while reconnect_attempts < self.MAX_RECONNECTS:
+                # Connect with retry logic (handles both initial and reconnection)
+                self._connect_with_retry()
+                # Reset reconnect counter after successful connection
+                reconnect_attempts = 0
 
-            if self._budlist_filter:
-                self._ais.set_filter(self._budlist_filter)
-            self._ais.consumer(self._consumer_callback)
+                # Set filter if needed
+                if self._budlist_filter:
+                    self._ais.set_filter(self._budlist_filter)
+
+                try:
+                    self._ais.consumer(self._consumer_callback)
+                    # If consumer returns normally (shouldn't happen), break
+                    break
+                except aprslib.exceptions.ConnectionDrop as e:
+                    reconnect_attempts += 1
+                    LOGGER.warning(
+                        "Connection dropped (attempt %d/%d): %s. Reconnecting...",
+                        reconnect_attempts,
+                        self.MAX_RECONNECTS,
+                        e,
+                    )
+                    # Close stale connection
+                    if self.is_connected():
+                        self._ais.close()
+                    # Continue to next iteration to reconnect
+                    continue
+
+            # Check if we exited due to max reconnection attempts
+            if reconnect_attempts >= self.MAX_RECONNECTS:
+                LOGGER.error(
+                    "Max reconnection attempts (%d) exceeded. Stopping listener.",
+                    self.MAX_RECONNECTS,
+                )
         except (
             OSError,
             ValueError,
