@@ -41,7 +41,8 @@
             },
             "abort": {
                 "already_configured": "This entry is already configured."
-            }
+            },
+            "entry_type": "List of weather stations"
         }
     },
     "entity": {
