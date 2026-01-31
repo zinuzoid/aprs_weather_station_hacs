@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "This information will be use by aprslib. See documentation https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is",
+                "description": "This information will be use by aprslib. See documentation {% set description_url = 'https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is' %}{{ description_url }}{% endset %}",
                 "data": {
                     "your_callsign": "Your callsign",
                     "callsign": "Callsign"
