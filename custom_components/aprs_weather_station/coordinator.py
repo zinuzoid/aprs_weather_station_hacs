@@ -59,5 +59,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
 
     async def async_shutdown(self) -> None:
         """Run shutdown clean up."""
-        self.config_entry.runtime_data.client.stop_and_join()
+        await self.hass.async_add_executor_job(
+            self.config_entry.runtime_data.client.stop_and_join
+        )
         await super().async_shutdown()

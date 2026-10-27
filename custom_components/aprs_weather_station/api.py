@@ -12,6 +12,8 @@ from .const import APRSIS_FULL_FEED_PORT, APRSIS_USER_DEFINED_PORT, LOGGER
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+STOP_JOIN_TIMEOUT = 10  # seconds
+
 
 class APRSWSApiClientError(Exception):
     """Exception to indicate a general API error."""
@@ -92,5 +94,8 @@ class APRSWSApiClient:
         LOGGER.debug("stop_and_join()")
         if self._aprs_listener:
             self._aprs_listener.stop()
-            self._aprs_listener.join()
+            self._aprs_listener.join(timeout=STOP_JOIN_TIMEOUT)
+            if self._aprs_listener.is_alive():
+                LOGGER.warning("APRS listener thread did not stop in time")
+            self._aprs_listener = None
         LOGGER.debug("stop_and_join() done")

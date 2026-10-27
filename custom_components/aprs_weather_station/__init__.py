@@ -54,8 +54,11 @@ async def async_setup_entry(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
-    hass.bus.async_listen_once(
-        EVENT_HOMEASSISTANT_STOP, lambda _: entry.runtime_data.client.stop_and_join()
+    entry.async_on_unload(
+        hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STOP,
+            lambda _: entry.runtime_data.client.stop_and_join(),
+        )
     )
 
     return True
@@ -66,7 +69,10 @@ async def async_unload_entry(
     entry: APRSWSConfigEntry,
 ) -> bool:
     """Handle removal of an entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        await hass.async_add_executor_job(entry.runtime_data.client.stop_and_join)
+    return unload_ok
 
 
 async def async_reload_entry(

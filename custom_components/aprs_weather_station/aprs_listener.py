@@ -1,5 +1,7 @@
 """APRSListener thread."""
 
+import contextlib
+import socket
 import threading
 import time
 from collections.abc import Callable
@@ -85,7 +87,9 @@ class APRSListener(threading.Thread):
         callback: Callable[[dict[str, Any]], None] | None,
     ) -> None:
         """Initialize the APRS listener."""
-        super().__init__()
+        # Daemon thread so a stuck socket never blocks interpreter exit.
+        super().__init__(name="APRSListener", daemon=True)
+        self._stop_event = threading.Event()
         self._callsign = callsign
         self._budlist_filter = budlist_filter
         self._callback = callback
@@ -102,12 +106,13 @@ class APRSListener(threading.Thread):
         if self._callback:
             self._callback(packet)
 
-    def _connect_with_retry(self) -> None:
-        """Connect to APRS-IS with retry logic."""
+    def _connect_with_retry(self) -> bool:
+        """Connect to APRS-IS with retry logic. Return False if stopped."""
         for attempt in range(self.MAX_RETRIES):
+            if self._stop_event.is_set():
+                return False
             try:
                 self._ais.connect()
-                break  # Connection successful, exit retry loop
             except (aprslib.exceptions.LoginError, ConnectionError) as e:
                 if attempt < self.MAX_RETRIES - 1:
                     LOGGER.warning(
@@ -117,14 +122,22 @@ class APRSListener(threading.Thread):
                         e,
                         self.RETRY_DELAY,
                     )
-                    time.sleep(self.RETRY_DELAY)
+                    if self._stop_event.wait(self.RETRY_DELAY):
+                        return False
                 else:
                     LOGGER.error(
                         "Connection failed after %d attempts: %s", self.MAX_RETRIES, e
                     )
                     raise
+            else:
+                if self._stop_event.is_set():
+                    # stop() was called while connecting
+                    self._ais.close()
+                    return False
+                return True  # Connection successful
+        return False
 
-    def run(self) -> None:
+    def run(self) -> None:  # noqa: PLR0912
         """Thread entry point - connects to APRS-IS and starts consuming packets."""
         if self.SEND_FAKE_DATA:
             # Send fake data after 3 seconds for testing
@@ -136,9 +149,13 @@ class APRSListener(threading.Thread):
         try:
             # Main consumer loop with automatic reconnection
             reconnect_attempts = 0
-            while reconnect_attempts < self.MAX_RECONNECTS:
+            while (
+                not self._stop_event.is_set()
+                and reconnect_attempts < self.MAX_RECONNECTS
+            ):
                 # Connect with retry logic (handles both initial and reconnection)
-                self._connect_with_retry()
+                if not self._connect_with_retry():
+                    break
                 # Reset reconnect counter after successful connection
                 reconnect_attempts = 0
 
@@ -151,6 +168,9 @@ class APRSListener(threading.Thread):
                     # If consumer returns normally (shouldn't happen), break
                     break
                 except aprslib.exceptions.ConnectionDrop as e:
+                    if self._stop_event.is_set():
+                        # Socket was shut down by stop(), don't reconnect
+                        break
                     reconnect_attempts += 1
                     LOGGER.warning(
                         "Connection dropped (attempt %d/%d): %s. Reconnecting...",
@@ -177,7 +197,10 @@ class APRSListener(threading.Thread):
             aprslib.exceptions.GenericError,
         ) as e:
             # Connection failed or socket was closed from main thread
-            LOGGER.exception(e)
+            if self._stop_event.is_set():
+                LOGGER.debug("Listener stopped: %s", e)
+            else:
+                LOGGER.exception(e)
         except Exception as e:  # noqa: BLE001
             # Catch all other exceptions to prevent thread from hanging
             LOGGER.error(
@@ -189,7 +212,18 @@ class APRSListener(threading.Thread):
     def stop(self) -> None:
         """Signal the listener to stop and close the connection."""
         LOGGER.debug("stop()")
-        if self.is_connected():
+        self._stop_event.set()
+        sock = getattr(self._ais, "sock", None)
+        if sock is not None:
+            # shutdown() wakes up a select()/recv() blocked in the listener
+            # thread; close() alone does not on Linux.
+            with contextlib.suppress(OSError):
+                sock.shutdown(socket.SHUT_RDWR)
+        # Let the listener thread close its own socket on exit, closing it
+        # underneath a running select()/recv() only produces noisy errors.
+        if (
+            not self.is_alive() or threading.current_thread() is self
+        ) and self.is_connected():
             self._ais.close()
         LOGGER.debug("stop() done")
 
