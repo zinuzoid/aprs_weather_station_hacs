@@ -81,6 +81,9 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 },
             ),
             errors=_errors,
+            description_placeholders={
+                "docs_url": "https://aprs-python.readthedocs.io/en/stable/examples.html#aprs-is"
+            },
         )
 
 
