@@ -6,6 +6,30 @@ from custom_components.aprs_weather_station.api import APRSWSApiClient
 from custom_components.aprs_weather_station.aprs_listener import APRSListener
 
 
+def test_listener_status_callback_called_on_connect_and_disconnect() -> None:
+    """Test APRSListener notifies status_callback on connect/disconnect."""
+    status_calls: list[bool] = []
+
+    listener = APRSListener(
+        callsign="N0CALL",
+        budlist_filter="b/W3ADO-1",
+        callback=lambda _: None,
+        status_callback=lambda status: status_calls.append(status),
+    )
+
+    mock_ais = MagicMock()
+    listener._ais = mock_ais
+
+    # Test _connect success
+    assert listener._connect() is True
+    assert status_calls[-1] is True
+
+    # Test _connect failure
+    mock_ais.connect.side_effect = ConnectionError("Network down")
+    assert listener._connect() is False
+    assert status_calls[-1] is False
+
+
 def test_listener_stop_unblocks_and_closes() -> None:
     """Test stop closes connection and sets stop event (Item 2)."""
     listener = APRSListener(
