@@ -66,6 +66,9 @@ class APRSWSApiClient:
                 ais.set_filter(ais_filter)
             ais.connect()
             ais.close()
+        except aprslib.exceptions.LoginError as ex:
+            msg = f"Authentication failed: {ex}"
+            raise APRSWSApiClientAuthenticationError(msg) from ex
         except Exception as ex:
             msg = f"Something wrong! - {ex}"
             raise APRSWSApiClientCommunicationError(msg) from ex

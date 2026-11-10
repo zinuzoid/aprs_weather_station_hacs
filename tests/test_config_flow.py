@@ -2,11 +2,14 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aprslib
 import pytest
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResultType
 
 from custom_components.aprs_weather_station.api import (
+    APRSWSApiClient,
+    APRSWSApiClientAuthenticationError,
     APRSWSApiClientCommunicationError,
 )
 from custom_components.aprs_weather_station.config_flow import (
@@ -93,6 +96,35 @@ async def test_flow_user_step_connection_error() -> None:
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"]["base"] == "connection"
+
+
+@pytest.mark.asyncio
+async def test_flow_user_step_auth_error() -> None:
+    """Test handling auth error in main flow (Item 14)."""
+    flow = APRSWSFlowHandler()
+    flow.hass = MagicMock()
+    flow.hass.async_add_executor_job = AsyncMock(
+        side_effect=APRSWSApiClientAuthenticationError("Auth failed")
+    )
+
+    result = await flow.async_step_user({CONF_YOUR_CALLSIGN: "N0CALL"})
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"]["base"] == "auth"
+
+
+def test_api_client_test_connection_maps_login_error() -> None:
+    """Test that APRSWSApiClient.test_connection maps LoginError (Item 14)."""
+    client = APRSWSApiClient(callsign="N0CALL", budlist=None)
+    with patch("aprslib.IS") as mock_is_cls:
+        mock_is = MagicMock()
+        mock_is.connect.side_effect = aprslib.exceptions.LoginError("Invalid passcode")
+        mock_is_cls.return_value = mock_is
+
+        with pytest.raises(
+            APRSWSApiClientAuthenticationError, match="Invalid passcode"
+        ):
+            client.test_connection()
 
 
 @pytest.mark.asyncio
