@@ -97,19 +97,31 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
         if self.device_info:
             self.device_info.update(name=data.callsign)
 
-    def _set_location_data(self, value: str | float | datetime | None) -> bool:
-        if not isinstance(value, str):
-            LOGGER.error("value is not str, %s", value)
-            return False
-        lat, lon = value.split(",")
-
-        lat = float(lat)
-        lon = float(lon)
-
-        self._attr_latitude = lat
-        self._attr_longitude = lon
-
-        return True
+    def _set_location_data(
+        self, value: tuple[float, float] | str | float | datetime | None
+    ) -> bool:
+        if isinstance(value, tuple):
+            try:
+                lat, lon = value
+                self._attr_latitude = float(lat)
+                self._attr_longitude = float(lon)
+            except (ValueError, TypeError):
+                LOGGER.error("Failed to parse location tuple: %s", value)
+                return False
+            else:
+                return True
+        if isinstance(value, str):
+            try:
+                lat_str, lon_str = value.split(",")
+                self._attr_latitude = float(lat_str)
+                self._attr_longitude = float(lon_str)
+            except (ValueError, AttributeError):
+                LOGGER.error("Failed to parse location string: %s", value)
+                return False
+            else:
+                return True
+        LOGGER.error("Value is not a valid location: %s", value)
+        return False
 
     @callback
     def _handle_coordinator_update(self) -> None:

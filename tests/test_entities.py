@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
+from custom_components.aprs_weather_station.aprs_parser import APRSPacketParser
 from custom_components.aprs_weather_station.const import (
     CONF_CALLSIGN,
     DOMAIN,
@@ -110,38 +111,63 @@ def test_station_sensor_unique_id_and_device_info() -> None:
 
 
 def test_location_sensor_logging_and_update() -> None:
-    """Test device_tracker location update does not throw log format error (Item 7)."""
+    """Test device_tracker handles tuple coordinates and legacy str (Items 7, 22)."""
     coordinator = MagicMock()
     coordinator.config_entry.entry_id = "entry_123"
     coordinator.config_entry.domain = DOMAIN
 
+    # Initial data with typed tuple (Item 22)
     loc_data = APRSWSSensorData(
         timestamp=1700000000,
         callsign="W3ADO-1",
         type="location",
-        value="38.9876,-76.5432",
+        value=(38.9876, -76.5432),
     )
 
     tracker = APRSWSLocationSensor(data=loc_data, coordinator=coordinator)
     assert tracker.latitude == pytest.approx(38.9876)
     assert tracker.longitude == pytest.approx(-76.5432)
 
-    # Simulate coordinator update with new coordinates
+    # Coordinator update with new tuple coordinates
     new_loc_data = APRSWSSensorData(
         timestamp=1700000060,
         callsign="W3ADO-1",
         type="location",
-        value="39.1234,-76.9876",
+        value=(39.1234, -76.9876),
     )
     coordinator.data = [new_loc_data]
     tracker.async_write_ha_state = MagicMock()
 
-    # This calls LOGGER.debug which had the 3-placeholder 1-arg bug
     tracker._handle_coordinator_update()
 
     assert tracker.latitude == pytest.approx(39.1234)
     assert tracker.longitude == pytest.approx(-76.9876)
     tracker.async_write_ha_state.assert_called_once()
+
+    # Legacy string coordinate update
+    legacy_data = APRSWSSensorData(
+        timestamp=1700000120,
+        callsign="W3ADO-1",
+        type="location",
+        value="40.0,-75.0",
+    )
+    coordinator.data = [legacy_data]
+    tracker._handle_coordinator_update()
+    assert tracker.latitude == pytest.approx(40.0)
+    assert tracker.longitude == pytest.approx(-75.0)
+
+
+def test_parser_extracts_location_tuple() -> None:
+    """Test APRSPacketParser outputs location as (lat, lon) tuple (Item 22)."""
+    packet = {
+        "from": "W3ADO-1",
+        "timestamp": 1700000000,
+        "latitude": 38.9876,
+        "longitude": -76.5432,
+    }
+    sensors = APRSPacketParser().parse(packet)
+    loc = next(s for s in sensors if s.type == "location")
+    assert loc.value == (38.9876, -76.5432)
 
 
 def test_wind_direction_device_and_state_class() -> None:

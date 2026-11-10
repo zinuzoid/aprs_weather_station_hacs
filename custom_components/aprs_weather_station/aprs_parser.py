@@ -43,14 +43,19 @@ class APRSPacketParser:
 
         # Add location sensor if latitude and longitude are available
         if "latitude" in packet and "longitude" in packet:
-            sensor_data.append(
-                APRSWSSensorData(
-                    timestamp=timestamp,
-                    callsign=callsign,
-                    type="location",
-                    value=f"{packet['latitude']},{packet['longitude']}",
+            try:
+                lat = float(packet["latitude"])
+                lon = float(packet["longitude"])
+                sensor_data.append(
+                    APRSWSSensorData(
+                        timestamp=timestamp,
+                        callsign=callsign,
+                        type="location",
+                        value=(lat, lon),
+                    )
                 )
-            )
+            except (ValueError, TypeError) as err:
+                LOGGER.debug("Could not parse coordinates: %s", err)
 
         # Parse weather data if available
         weather = packet.get("weather")

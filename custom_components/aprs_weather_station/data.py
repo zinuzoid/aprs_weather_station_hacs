@@ -35,11 +35,13 @@ class APRSWSSensorData:
     callsign: str
     type: str
 
-    value: str | int | float | datetime | None
+    value: str | float | datetime | tuple[float, float] | None
 
     @classmethod
     def from_other_with_new_value(
-        cls, other: APRSWSSensorData, value: str | float | datetime | None
+        cls,
+        other: APRSWSSensorData,
+        value: str | float | datetime | tuple[float, float] | None,
     ) -> APRSWSSensorData:
         """Create copy with new value."""
         return APRSWSSensorData(
