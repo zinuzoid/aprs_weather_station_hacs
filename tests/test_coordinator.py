@@ -143,3 +143,27 @@ async def test_coordinator_update_data_revives_listener() -> None:
         coordinator.aprs_callback,
         coordinator.aprs_status_callback,
     )
+
+
+@pytest.mark.asyncio
+async def test_coordinator_update_data_empty_budlist_skips_start_listening() -> None:
+    """Test _async_update_data skips start_listening when budlist empty (Item 17)."""
+    hass = MagicMock()
+    hass.async_add_executor_job = AsyncMock(return_value=None)
+
+    mock_client = MagicMock()
+    mock_client.is_connected.return_value = False
+
+    mock_entry = MagicMock()
+    mock_entry.entry_id = "test_entry_id"
+    mock_entry.domain = DOMAIN
+    mock_entry.subentries = {}
+    mock_entry.runtime_data.client = mock_client
+
+    coordinator = APRSWSDataUpdateCoordinator(hass, mock_entry)
+
+    data = await coordinator._async_update_data()
+
+    # Listener should not be started, no jobs dispatched
+    hass.async_add_executor_job.assert_not_called()
+    assert any(s.key == "APRS-IS_is_connected" for s in data)

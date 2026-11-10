@@ -87,7 +87,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
             e.data[CONF_CALLSIGN].upper() for e in self.config_entry.subentries.values()
         ]
         if not budlist:
-            LOGGER.warning("budlist is None, skip start_listening!")
+            LOGGER.debug("No stations in budlist, skipping start_listening")
             return list(self._sensors_by_key.values())
 
         should_start = (budlist != client.budlist) or not client.is_listening()
