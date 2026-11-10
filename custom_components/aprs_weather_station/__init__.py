@@ -10,9 +10,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.loader import async_get_loaded_integration
 
-from .api import APRSWSApiClient
+from .api import (
+    APRSWSApiClient,
+    APRSWSApiClientAuthenticationError,
+    APRSWSApiClientCommunicationError,
+    APRSWSApiClientError,
+)
 from .const import CONF_YOUR_CALLSIGN
 from .coordinator import APRSWSDataUpdateCoordinator
 from .data import APRSWSRuntimeData
@@ -31,12 +37,20 @@ async def async_setup_entry(
     entry: APRSWSConfigEntry,
 ) -> bool:
     """Set up this integration using UI."""
+    client = APRSWSApiClient(
+        callsign=entry.data[CONF_YOUR_CALLSIGN],
+        budlist=None,
+    )
+    try:
+        await hass.async_add_executor_job(client.test_connection)
+    except APRSWSApiClientAuthenticationError as err:
+        raise ConfigEntryAuthFailed(err) from err
+    except (APRSWSApiClientCommunicationError, APRSWSApiClientError) as err:
+        raise ConfigEntryNotReady(err) from err
+
     coordinator = APRSWSDataUpdateCoordinator(hass=hass, entry=entry)
     entry.runtime_data = APRSWSRuntimeData(
-        client=APRSWSApiClient(
-            callsign=entry.data[CONF_YOUR_CALLSIGN],
-            budlist=None,
-        ),
+        client=client,
         integration=async_get_loaded_integration(hass, entry.domain),
         coordinator=coordinator,
     )
