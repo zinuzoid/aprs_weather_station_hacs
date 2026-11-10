@@ -2,7 +2,7 @@
     "config": {
         "step": {
             "user": {
-                "description": "This information will be use by aprslib. See documentation {docs_url}",
+                "description": "This information will be used by aprslib. See documentation {docs_url}",
                 "data": {
                     "your_callsign": "Your callsign",
                     "callsign": "Callsign"
@@ -10,8 +10,8 @@
             }
         },
         "error": {
-            "auth": "Username/Password is wrong.",
-            "connection": "Unable to connect to the server.",
+            "auth": "APRS-IS login failed. Please check your callsign.",
+            "connection": "Unable to connect to the APRS-IS server.",
             "invalid_callsign": "Invalid callsign format.",
             "unknown": "Unknown error occurred."
         },
@@ -19,7 +19,7 @@
             "already_configured": "This entry is already configured."
         },
         "create_entry": {
-            "default": "Once finish, please continue to add weather station callsign in subentry -> \"Add callsign\" button."
+            "default": "Setup complete! Please add weather station callsigns using the \"Add weather station\" button."
         }
     },
     "config_subentries": {
@@ -36,30 +36,51 @@
                 }
             },
             "error": {
-                "auth": "Username/Password is wrong.",
-                "connection": "Unable to connect to the server.",
+                "auth": "APRS-IS login failed. Please check your callsign.",
+                "connection": "Unable to connect to the APRS-IS server.",
                 "invalid_callsign": "Invalid callsign format.",
                 "unknown": "Unknown error occurred."
             },
             "abort": {
-                "already_configured": "This entry is already configured."
+                "already_configured": "This weather station is already configured."
             },
             "entry_type": "List of weather stations"
         }
     },
     "entity": {
         "sensor": {
-            "packet_received": {
-                "name": "#Packet received"
+            "timestamp": {
+                "name": "Timestamp"
             },
-            "last_timestamp": {
-                "name": "Last packet timestamp"
+            "packet_received": {
+                "name": "Packets received"
+            },
+            "wind_speed": {
+                "name": "Wind speed"
+            },
+            "wind_direction": {
+                "name": "Wind direction"
             },
             "wind_gust": {
                 "name": "Wind gust speed"
             },
+            "temperature": {
+                "name": "Temperature"
+            },
+            "precipitation": {
+                "name": "Precipitation"
+            },
+            "humidity": {
+                "name": "Humidity"
+            },
+            "atmospheric_pressure": {
+                "name": "Atmospheric pressure"
+            },
+            "illuminance": {
+                "name": "Illuminance"
+            },
             "is_connected": {
-                "name": "Is connected"
+                "name": "Connection status"
             }
         },
         "device_tracker": {

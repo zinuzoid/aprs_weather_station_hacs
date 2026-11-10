@@ -100,3 +100,31 @@ def test_icons_json_valid_and_complete() -> None:
         else:
             sensor_icons = icons["entity"]["sensor"]
             assert sensor_icons[sensor_type]["default"] == expected_icon
+
+
+def test_translations_valid_and_complete() -> None:
+    """Test strings.json and translations/en.json define all sensors (Item 27)."""
+    base = Path(__file__).parent.parent / "custom_components" / "aprs_weather_station"
+    strings_path = base / "strings.json"
+    en_path = base / "translations" / "en.json"
+
+    assert strings_path.exists()
+    assert en_path.exists()
+
+    strings = json.loads(strings_path.read_text())
+    en = json.loads(en_path.read_text())
+
+    for data in (strings, en):
+        # Auth error shouldn't mention Username/Password
+        assert "Username/Password" not in data["config"]["error"]["auth"]
+        assert (
+            "Username/Password"
+            not in data["config_subentries"]["budlist"]["error"]["auth"]
+        )
+
+        # All sensors must have translation names
+        for sensor_type in SENSOR_TYPE_TO_MDI_ICONS:
+            if sensor_type == "location":
+                assert "name" in data["entity"]["device_tracker"]["location"]
+            else:
+                assert "name" in data["entity"]["sensor"][sensor_type]
