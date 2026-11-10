@@ -1,4 +1,4 @@
-"""Sample API Client."""
+"""APRS-IS API client for aprs_weather_station."""
 
 from __future__ import annotations
 

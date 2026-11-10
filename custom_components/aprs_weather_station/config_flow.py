@@ -1,4 +1,4 @@
-"""Adds config flow for Blueprint."""
+"""Config flow for aprs_weather_station."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def _is_valid_callsign(callsign: str) -> bool:
 
 
 class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow for Blueprint."""
+    """Config flow for aprs_weather_station."""
 
     VERSION = 1
 
