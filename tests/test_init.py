@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import yaml
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 
 from custom_components.aprs_weather_station import (
@@ -128,3 +129,19 @@ def test_translations_valid_and_complete() -> None:
                 assert "name" in data["entity"]["device_tracker"]["location"]
             else:
                 assert "name" in data["entity"]["sensor"][sensor_type]
+
+
+def test_quality_scale_yaml_valid() -> None:
+    """Test quality_scale.yaml exists and has valid rules (Item 33)."""
+    qs_path = (
+        Path(__file__).parent.parent
+        / "custom_components"
+        / "aprs_weather_station"
+        / "quality_scale.yaml"
+    )
+    assert qs_path.exists()
+    content = yaml.safe_load(qs_path.read_text())
+    assert "rules" in content
+    assert content["rules"]["test-before-configure"] == "done"
+    assert content["rules"]["test-before-setup"] == "done"
+    assert content["rules"]["diagnostics"] == "done"
