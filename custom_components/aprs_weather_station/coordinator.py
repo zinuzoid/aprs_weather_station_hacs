@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from time import time
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .aprs_parser import APRSPacketParser
-from .const import CONF_CALLSIGN, LOGGER
+from .const import CONF_CALLSIGN, DOMAIN, LOGGER
 from .data import APRSWSSensorData
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+
     from .data import APRSWSConfigEntry
 
 
@@ -20,6 +23,20 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
     """Class to manage fetching data from the API."""
 
     config_entry: APRSWSConfigEntry
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: APRSWSConfigEntry,
+    ) -> None:
+        """Initialize coordinator."""
+        super().__init__(
+            hass=hass,
+            logger=LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(minutes=1),
+            config_entry=entry,
+        )
 
     def aprs_callback(self, packet: dict[str, Any]) -> None:
         """Execute on non-loop thread. Handle APRS packet."""
