@@ -4,8 +4,14 @@ from types import MappingProxyType
 from unittest.mock import MagicMock
 
 import pytest
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
-from custom_components.aprs_weather_station.const import CONF_CALLSIGN, DOMAIN
+from custom_components.aprs_weather_station.const import (
+    CONF_CALLSIGN,
+    DOMAIN,
+    SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS,
+    SENSOR_TYPE_TO_SENSOR_STATE_CLASS,
+)
 from custom_components.aprs_weather_station.data import APRSWSSensorData
 from custom_components.aprs_weather_station.device_tracker import (
     APRSWSLocationSensor,
@@ -116,3 +122,29 @@ def test_location_sensor_logging_and_update() -> None:
     assert tracker.latitude == pytest.approx(39.1234)
     assert tracker.longitude == pytest.approx(-76.9876)
     tracker.async_write_ha_state.assert_called_once()
+
+
+def test_wind_direction_device_and_state_class() -> None:
+    """Test wind_direction sensor uses WIND_DIRECTION and MEASUREMENT_ANGLE."""
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry_123"
+    coordinator.config_entry.domain = DOMAIN
+
+    sensor_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="wind_direction",
+        value=180,
+    )
+
+    sensor = APRSWSSensor(data=sensor_data, coordinator=coordinator)
+    assert sensor.device_class == SensorDeviceClass.WIND_DIRECTION
+    assert sensor.state_class == SensorStateClass.MEASUREMENT_ANGLE
+    assert (
+        SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS["wind_direction"]
+        == SensorDeviceClass.WIND_DIRECTION
+    )
+    assert (
+        SENSOR_TYPE_TO_SENSOR_STATE_CLASS["wind_direction"]
+        == SensorStateClass.MEASUREMENT_ANGLE
+    )
