@@ -98,10 +98,6 @@ class APRSListener(threading.Thread):
             self._callsign, port=10152 if budlist_filter is None else 14580
         )
 
-    def __del__(self) -> None:
-        """Destructor to ensure connection is closed."""
-        self.stop()
-
     def _consumer_callback(self, packet: dict[str, Any]) -> None:
         """Handle incoming APRS-IS packets."""
         if self._callback:
