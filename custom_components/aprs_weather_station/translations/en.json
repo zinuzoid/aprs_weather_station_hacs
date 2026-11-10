@@ -12,6 +12,7 @@
         "error": {
             "auth": "Username/Password is wrong.",
             "connection": "Unable to connect to the server.",
+            "invalid_callsign": "Invalid callsign format.",
             "unknown": "Unknown error occurred."
         },
         "abort": {
@@ -37,6 +38,7 @@
             "error": {
                 "auth": "Username/Password is wrong.",
                 "connection": "Unable to connect to the server.",
+                "invalid_callsign": "Invalid callsign format.",
                 "unknown": "Unknown error occurred."
             },
             "abort": {

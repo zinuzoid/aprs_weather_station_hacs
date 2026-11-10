@@ -38,11 +38,12 @@ if TYPE_CHECKING:
 def _find_subentry(
     subentries: MappingProxyType[str, ConfigSubentry], callsign: str
 ) -> ConfigSubentry | None:
+    callsign_upper = callsign.upper()
     return next(
         (
             subentry
             for subentry in subentries.values()
-            if subentry.data[CONF_CALLSIGN] == callsign
+            if subentry.data[CONF_CALLSIGN].upper() == callsign_upper
         ),
         None,
     )

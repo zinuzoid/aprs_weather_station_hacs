@@ -83,7 +83,9 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
         conn_sensor = self._create_is_connected_data(is_connected=is_conn)
         self._sensors_by_key[conn_sensor.key] = conn_sensor
 
-        budlist = [e.data[CONF_CALLSIGN] for e in self.config_entry.subentries.values()]
+        budlist = [
+            e.data[CONF_CALLSIGN].upper() for e in self.config_entry.subentries.values()
+        ]
         if not budlist:
             LOGGER.warning("budlist is None, skip start_listening!")
             return list(self._sensors_by_key.values())

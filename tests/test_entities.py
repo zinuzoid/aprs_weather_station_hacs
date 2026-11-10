@@ -1,14 +1,40 @@
 """Tests for APRS Weather Station sensors and device tracker entities."""
 
+from types import MappingProxyType
 from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.aprs_weather_station.const import DOMAIN
+from custom_components.aprs_weather_station.const import CONF_CALLSIGN, DOMAIN
 from custom_components.aprs_weather_station.data import APRSWSSensorData
 from custom_components.aprs_weather_station.device_tracker import (
     APRSWSLocationSensor,
 )
+from custom_components.aprs_weather_station.device_tracker import (
+    _find_subentry as tracker_find_subentry,
+)
+from custom_components.aprs_weather_station.sensor import (
+    _find_subentry as sensor_find_subentry,
+)
+
+
+def test_find_subentry_case_insensitive() -> None:
+    """Test _find_subentry matches callsigns case-insensitively (Item 10)."""
+    subentry = MagicMock()
+    subentry.data = {CONF_CALLSIGN: "W3ADO-1"}
+    subentries = MappingProxyType({"s1": subentry})
+
+    # Exact case
+    assert sensor_find_subentry(subentries, "W3ADO-1") is subentry
+    assert tracker_find_subentry(subentries, "W3ADO-1") is subentry
+
+    # Lowercase
+    assert sensor_find_subentry(subentries, "w3ado-1") is subentry
+    assert tracker_find_subentry(subentries, "w3ado-1") is subentry
+
+    # Non-matching
+    assert sensor_find_subentry(subentries, "N0CALL") is None
+    assert tracker_find_subentry(subentries, "N0CALL") is None
 
 
 def test_location_sensor_logging_and_update() -> None:

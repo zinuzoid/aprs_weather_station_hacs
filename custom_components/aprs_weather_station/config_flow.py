@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -22,6 +23,13 @@ from .const import (
     DOMAIN,
     LOGGER,
 )
+
+CALLSIGN_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,15}$")
+
+
+def _is_valid_callsign(callsign: str) -> bool:
+    """Validate APRS callsign format."""
+    return bool(CALLSIGN_PATTERN.match(callsign))
 
 
 class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
@@ -45,26 +53,29 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle a flow initialized by the user."""
         _errors = {}
         if user_input is not None:
-            try:
-                await _test_connect(self.hass, callsign=user_input[CONF_YOUR_CALLSIGN])
-            except APRSWSApiClientAuthenticationError as exception:
-                LOGGER.warning(exception)
-                _errors["base"] = "auth"
-            except APRSWSApiClientCommunicationError as exception:
-                LOGGER.error(exception)
-                _errors["base"] = "connection"
-            except APRSWSApiClientError as exception:
-                LOGGER.exception(exception)
-                _errors["base"] = "unknown"
+            callsign = user_input[CONF_YOUR_CALLSIGN].strip().upper()
+            user_input[CONF_YOUR_CALLSIGN] = callsign
+            if not _is_valid_callsign(callsign):
+                _errors["base"] = "invalid_callsign"
             else:
-                await self.async_set_unique_id(
-                    unique_id=slugify(user_input[CONF_YOUR_CALLSIGN])
-                )
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title=user_input[CONF_YOUR_CALLSIGN],
-                    data=user_input,
-                )
+                try:
+                    await _test_connect(self.hass, callsign=callsign)
+                except APRSWSApiClientAuthenticationError as exception:
+                    LOGGER.warning(exception)
+                    _errors["base"] = "auth"
+                except APRSWSApiClientCommunicationError as exception:
+                    LOGGER.error(exception)
+                    _errors["base"] = "connection"
+                except APRSWSApiClientError as exception:
+                    LOGGER.exception(exception)
+                    _errors["base"] = "unknown"
+                else:
+                    await self.async_set_unique_id(unique_id=slugify(callsign))
+                    self._abort_if_unique_id_configured()
+                    return self.async_create_entry(
+                        title=callsign,
+                        data=user_input,
+                    )
 
         return self.async_show_form(
             step_id="user",
@@ -100,27 +111,38 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
 
         _errors = {}
         if user_input is not None:
-            try:
-                await _test_connect(
-                    self.hass,
-                    callsign=config_entry.data[CONF_YOUR_CALLSIGN],
-                    budlist=[user_input[CONF_CALLSIGN]],
-                )
-            except APRSWSApiClientAuthenticationError as exception:
-                LOGGER.warning(exception)
-                _errors["base"] = "auth"
-            except APRSWSApiClientCommunicationError as exception:
-                LOGGER.error(exception)
-                _errors["base"] = "connection"
-            except APRSWSApiClientError as exception:
-                LOGGER.exception(exception)
-                _errors["base"] = "unknown"
+            callsign = user_input[CONF_CALLSIGN].strip().upper()
+            user_input[CONF_CALLSIGN] = callsign
+            existing_callsigns = {
+                subentry.data[CONF_CALLSIGN].upper()
+                for subentry in config_entry.subentries.values()
+            }
+            if not _is_valid_callsign(callsign):
+                _errors["base"] = "invalid_callsign"
+            elif callsign in existing_callsigns:
+                return self.async_abort(reason="already_configured")
             else:
-                return self.async_create_entry(
-                    title=user_input[CONF_CALLSIGN],
-                    data=user_input,
-                    unique_id=user_input[CONF_CALLSIGN],
-                )
+                try:
+                    await _test_connect(
+                        self.hass,
+                        callsign=config_entry.data[CONF_YOUR_CALLSIGN],
+                        budlist=[callsign],
+                    )
+                except APRSWSApiClientAuthenticationError as exception:
+                    LOGGER.warning(exception)
+                    _errors["base"] = "auth"
+                except APRSWSApiClientCommunicationError as exception:
+                    LOGGER.error(exception)
+                    _errors["base"] = "connection"
+                except APRSWSApiClientError as exception:
+                    LOGGER.exception(exception)
+                    _errors["base"] = "unknown"
+                else:
+                    return self.async_create_entry(
+                        title=callsign,
+                        data=user_input,
+                        unique_id=callsign,
+                    )
 
         return self.async_show_form(
             step_id="user",
