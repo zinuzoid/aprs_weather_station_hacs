@@ -174,11 +174,26 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
                     ],
                 )
 
-        super().__init__(coordinator, entity_description, data.callsign)
+        if data.type == "is_connected":
+            super().__init__(
+                coordinator,
+                entity_description,
+                coordinator.config_entry.entry_id,
+            )
+            self._attr_unique_id = (
+                f"{coordinator.config_entry.entry_id}_{entity_description.key}"
+            )
+            if self.device_info:
+                self.device_info.update(
+                    name=f"APRS-IS ({coordinator.config_entry.title})",
+                    manufacturer="APRS-IS",
+                )
+        else:
+            super().__init__(coordinator, entity_description, data.callsign)
+            if self.device_info:
+                self.device_info.update(name=data.callsign)
         self.entity_description = entity_description
         self.data = data
-        if self.device_info:
-            self.device_info.update(name=data.callsign)
 
     @property
     def native_value(self) -> StateType | datetime:

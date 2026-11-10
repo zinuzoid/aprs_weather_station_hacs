@@ -14,6 +14,9 @@ from custom_components.aprs_weather_station.device_tracker import (
     _find_subentry as tracker_find_subentry,
 )
 from custom_components.aprs_weather_station.sensor import (
+    APRSWSSensor,
+)
+from custom_components.aprs_weather_station.sensor import (
     _find_subentry as sensor_find_subentry,
 )
 
@@ -35,6 +38,49 @@ def test_find_subentry_case_insensitive() -> None:
     # Non-matching
     assert sensor_find_subentry(subentries, "N0CALL") is None
     assert tracker_find_subentry(subentries, "N0CALL") is None
+
+
+def test_is_connected_sensor_unique_id_and_device_info() -> None:
+    """Test is_connected unique_id and device_info scoped to entry_id (Item 11)."""
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry_123"
+    coordinator.config_entry.domain = DOMAIN
+    coordinator.config_entry.title = "N0CALL"
+
+    sensor_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="APRS-IS",
+        type="is_connected",
+        value=True,
+    )
+
+    sensor = APRSWSSensor(data=sensor_data, coordinator=coordinator)
+
+    # Unique id must be scoped with entry_id to avoid collision across multiple accounts
+    assert sensor.unique_id == "entry_123_APRS-IS_is_connected"
+    # Device info identifier must be scoped to entry_id
+    assert sensor.device_info["identifiers"] == {(DOMAIN, "entry_123")}
+    assert "APRS-IS (N0CALL)" in sensor.device_info["name"]
+
+
+def test_station_sensor_unique_id_and_device_info() -> None:
+    """Test station sensor unique_id and device_info scoped to station callsign."""
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry_123"
+    coordinator.config_entry.domain = DOMAIN
+
+    sensor_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="temperature",
+        value=22.0,
+    )
+
+    sensor = APRSWSSensor(data=sensor_data, coordinator=coordinator)
+
+    assert sensor.unique_id == "W3ADO-1_temperature"
+    assert sensor.device_info["identifiers"] == {(DOMAIN, "W3ADO-1")}
+    assert sensor.device_info["name"] == "W3ADO-1"
 
 
 def test_location_sensor_logging_and_update() -> None:
