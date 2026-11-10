@@ -1,5 +1,7 @@
 """Tests for integration setup and unload."""
 
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,7 +15,11 @@ from custom_components.aprs_weather_station.api import (
     APRSWSApiClientAuthenticationError,
     APRSWSApiClientCommunicationError,
 )
-from custom_components.aprs_weather_station.const import CONF_YOUR_CALLSIGN, DOMAIN
+from custom_components.aprs_weather_station.const import (
+    CONF_YOUR_CALLSIGN,
+    DOMAIN,
+    SENSOR_TYPE_TO_MDI_ICONS,
+)
 
 
 @pytest.mark.asyncio
@@ -74,3 +80,23 @@ async def test_async_setup_and_unload_entry_success() -> None:
 
         unload_result = await async_unload_entry(hass, entry)
         assert unload_result is True
+
+
+def test_icons_json_valid_and_complete() -> None:
+    """Test icons.json defines icons for all sensor types (Item 24)."""
+    icons_path = (
+        Path(__file__).parent.parent
+        / "custom_components"
+        / "aprs_weather_station"
+        / "icons.json"
+    )
+    assert icons_path.exists()
+    icons = json.loads(icons_path.read_text())
+
+    for sensor_type, expected_icon in SENSOR_TYPE_TO_MDI_ICONS.items():
+        if sensor_type == "location":
+            tracker_icons = icons["entity"]["device_tracker"]
+            assert tracker_icons["location"]["default"] == expected_icon
+        else:
+            sensor_icons = icons["entity"]["sensor"]
+            assert sensor_icons[sensor_type]["default"] == expected_icon
