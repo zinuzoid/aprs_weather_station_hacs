@@ -14,7 +14,7 @@ def test_listener_status_callback_called_on_connect_and_disconnect() -> None:
         callsign="N0CALL",
         budlist_filter="b/W3ADO-1",
         callback=lambda _: None,
-        status_callback=lambda status: status_calls.append(status),
+        status_callback=status_calls.append,
     )
 
     mock_ais = MagicMock()
