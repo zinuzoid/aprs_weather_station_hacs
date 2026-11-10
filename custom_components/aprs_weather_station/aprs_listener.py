@@ -3,7 +3,6 @@
 import contextlib
 import socket
 import threading
-import time
 from collections.abc import Callable
 from typing import Any
 
@@ -12,72 +11,12 @@ import aprslib.exceptions
 
 from .const import LOGGER
 
-FAKE_DATA1 = {
-    "raw": "G4ZMG>APRS,TCPIP*,qAC,T2SYDNEY:@100100z5205.65N/00219.62W_202/008g013t054r001p021P001h98b10038L000.WFL",  # noqa: E501
-    "from": "G4ZMG",
-    "to": "APRS",
-    "path": ["TCPIP*", "qAC", "T2SYDNEY"],
-    "via": "T2SYDNEY",
-    "messagecapable": True,
-    "raw_timestamp": "100100z",
-    "timestamp": 1762736400,
-    "format": "uncompressed",
-    "posambiguity": 0,
-    "symbol": "_",
-    "symbol_table": "/",
-    "latitude": 52.094166666666666,
-    "longitude": -2.327,
-    "course": 202,
-    "speed": 14.816,
-    "comment": ".WFL",
-    "weather": {
-        "wind_gust": 5.81152,
-        "temperature": 12.222222222222221,
-        "rain_1h": 0.254,
-        "rain_24h": 5.334,
-        "rain_since_midnight": 0.254,
-        "humidity": 98,
-        "pressure": 1003.8,
-        "luminosity": 0,
-    },
-}
-
-FAKE_DATA2 = {
-    "raw": "G8PZT>APXR04,qAO,G6JVY-10:@101119/5224.00N/00215.00W_000/000g000t050r000p000P028h83b0000 Kidderminster, UK {XrPi}",  # noqa: E501
-    "from": "G8PZT",
-    "to": "APXR04",
-    "path": ["qAO", "G6JVY-10"],
-    "via": "G6JVY-10",
-    "messagecapable": True,
-    "raw_timestamp": "101119/",
-    "timestamp": 1762773540,
-    "format": "uncompressed",
-    "posambiguity": 0,
-    "symbol": "_",
-    "symbol_table": "/",
-    "latitude": 52.4,
-    "longitude": -2.25,
-    "comment": "Kidderminster, UK {XrPi}",
-    "weather": {
-        "wind_direction": 0,
-        "wind_speed": 0.0,
-        "wind_gust": 0.0,
-        "temperature": 10.0,
-        "rain_1h": 0.0,
-        "rain_24h": 0.0,
-        "rain_since_midnight": 7.112,
-        "humidity": 83,
-    },
-}
-
 
 class APRSListener(threading.Thread):
     """APRS-IS listener thread that receives packets and routes them to callbacks."""
 
     MIN_RETRY_DELAY = 5  # seconds
     MAX_RETRY_DELAY = 60  # seconds
-
-    SEND_FAKE_DATA = False
 
     def __init__(
         self,
@@ -137,13 +76,6 @@ class APRSListener(threading.Thread):
 
     def run(self) -> None:  # noqa: PLR0912
         """Thread entry point - connects to APRS-IS and starts consuming packets."""
-        if self.SEND_FAKE_DATA:
-            # Send fake data after 3 seconds for testing
-            time.sleep(3)
-            self._consumer_callback(FAKE_DATA1)
-            time.sleep(3)
-            self._consumer_callback(FAKE_DATA1)
-
         delay = self.MIN_RETRY_DELAY
         try:
             # Main consumer loop with automatic reconnection and backoff

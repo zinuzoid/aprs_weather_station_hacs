@@ -4,6 +4,8 @@ from unittest.mock import MagicMock
 
 from custom_components.aprs_weather_station.api import APRSWSApiClient
 from custom_components.aprs_weather_station.aprs_listener import APRSListener
+from custom_components.aprs_weather_station.aprs_parser import APRSPacketParser
+from tests.fixtures.packets import FAKE_DATA1, FAKE_DATA2
 
 
 def test_listener_status_callback_called_on_connect_and_disconnect() -> None:
@@ -67,3 +69,19 @@ def test_api_client_is_listening_and_is_connected() -> None:
 
     mock_listener.is_alive.return_value = False
     assert client.is_listening() is False
+
+
+def test_fixtures_packets_parse() -> None:
+    """Test packet fixtures moved to tests/fixtures/ parse properly (Item 26)."""
+    parser = APRSPacketParser()
+
+    sensors1 = parser.parse(FAKE_DATA1)
+    types1 = {s.type for s in sensors1}
+    assert "temperature" in types1
+    assert "location" in types1
+    assert "humidity" in types1
+
+    sensors2 = parser.parse(FAKE_DATA2)
+    types2 = {s.type for s in sensors2}
+    assert "temperature" in types2
+    assert "location" in types2
