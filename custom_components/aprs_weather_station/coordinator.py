@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
-class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]]):
+class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[dict[str, APRSWSSensorData]]):
     """Class to manage fetching data from the API."""
 
     config_entry: APRSWSConfigEntry
@@ -56,7 +56,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
         """Handle connection status update on event loop."""
         conn_sensor = self._create_is_connected_data(is_connected=connected)
         self._sensors_by_key[conn_sensor.key] = conn_sensor
-        self.async_set_updated_data(list(self._sensors_by_key.values()))
+        self.async_set_updated_data(dict(self._sensors_by_key))
 
     def aprs_callback(self, packet: dict[str, Any]) -> None:
         """Execute on non-loop thread. Handle APRS packet."""
@@ -73,9 +73,9 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
         self._sensors_by_key[conn_sensor.key] = conn_sensor
         for item in data:
             self._sensors_by_key[item.key] = item
-        self.async_set_updated_data(list(self._sensors_by_key.values()))
+        self.async_set_updated_data(dict(self._sensors_by_key))
 
-    async def _async_update_data(self) -> list[APRSWSSensorData]:
+    async def _async_update_data(self) -> dict[str, APRSWSSensorData]:
         """Update data via library."""
         LOGGER.debug("_async_update_data")
         client = self.config_entry.runtime_data.client
@@ -88,7 +88,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
         ]
         if not budlist:
             LOGGER.debug("No stations in budlist, skipping start_listening")
-            return list(self._sensors_by_key.values())
+            return dict(self._sensors_by_key)
 
         should_start = (budlist != client.budlist) or not client.is_listening()
         if should_start:
@@ -99,7 +99,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
                 self.aprs_status_callback,
             )
 
-        return list(self._sensors_by_key.values())
+        return dict(self._sensors_by_key)
 
     async def async_shutdown(self) -> None:
         """Run shutdown clean up."""

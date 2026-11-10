@@ -135,7 +135,7 @@ def test_location_sensor_logging_and_update() -> None:
         type="location",
         value=(39.1234, -76.9876),
     )
-    coordinator.data = [new_loc_data]
+    coordinator.data = {new_loc_data.key: new_loc_data}
     tracker.async_write_ha_state = MagicMock()
 
     tracker._handle_coordinator_update()
@@ -151,7 +151,7 @@ def test_location_sensor_logging_and_update() -> None:
         type="location",
         value="40.0,-75.0",
     )
-    coordinator.data = [legacy_data]
+    coordinator.data = {legacy_data.key: legacy_data}
     tracker._handle_coordinator_update()
     assert tracker.latitude == pytest.approx(40.0)
     assert tracker.longitude == pytest.approx(-75.0)

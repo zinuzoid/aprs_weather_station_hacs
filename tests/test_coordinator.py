@@ -42,16 +42,14 @@ async def test_coordinator_status_callback_updates_is_connected() -> None:
     coordinator._async_handle_status_update(False)
 
     call_args = coordinator.async_set_updated_data.call_args[0][0]
-    conn_sensor = next(s for s in call_args if s.key == "APRS-IS_is_connected")
-    assert conn_sensor.value is False
+    assert call_args["APRS-IS_is_connected"].value is False
 
     # Simulate reconnect
     coordinator.aprs_status_callback(True)
     coordinator._async_handle_status_update(True)
 
     call_args = coordinator.async_set_updated_data.call_args[0][0]
-    conn_sensor = next(s for s in call_args if s.key == "APRS-IS_is_connected")
-    assert conn_sensor.value is True
+    assert call_args["APRS-IS_is_connected"].value is True
 
 
 @pytest.mark.asyncio
@@ -73,11 +71,10 @@ async def test_coordinator_packet_callback_merges_data_and_keeps_connected() -> 
     )
     coordinator._async_handle_packet_data([weather_sensor])
 
-    sensor_map = {s.key: s for s in coordinator.data}
-    assert "APRS-IS_is_connected" in sensor_map
-    assert sensor_map["APRS-IS_is_connected"].value is True
-    assert "W3ADO-1_temperature" in sensor_map
-    assert sensor_map["W3ADO-1_temperature"].value == 21.5
+    assert "APRS-IS_is_connected" in coordinator.data
+    assert coordinator.data["APRS-IS_is_connected"].value is True
+    assert "W3ADO-1_temperature" in coordinator.data
+    assert coordinator.data["W3ADO-1_temperature"].value == 21.5
 
     # Second packet with another sensor
     humidity_sensor = APRSWSSensorData(
@@ -88,10 +85,9 @@ async def test_coordinator_packet_callback_merges_data_and_keeps_connected() -> 
     )
     coordinator._async_handle_packet_data([humidity_sensor])
 
-    sensor_map = {s.key: s for s in coordinator.data}
-    assert sensor_map["APRS-IS_is_connected"].value is True
-    assert sensor_map["W3ADO-1_temperature"].value == 21.5
-    assert sensor_map["W3ADO-1_humidity"].value == 65
+    assert coordinator.data["APRS-IS_is_connected"].value is True
+    assert coordinator.data["W3ADO-1_temperature"].value == 21.5
+    assert coordinator.data["W3ADO-1_humidity"].value == 65
 
 
 @pytest.mark.asyncio
@@ -166,4 +162,4 @@ async def test_coordinator_update_data_empty_budlist_skips_start_listening() -> 
 
     # Listener should not be started, no jobs dispatched
     hass.async_add_executor_job.assert_not_called()
-    assert any(s.key == "APRS-IS_is_connected" for s in data)
+    assert "APRS-IS_is_connected" in data

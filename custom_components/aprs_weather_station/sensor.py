@@ -46,12 +46,16 @@ async def async_setup_entry(
     known_sensors: set[str] = set()
 
     def _check_device() -> None:
-        new_sensors = list(
-            filter(
-                lambda s: s.key not in known_sensors and s.type != "location",
-                coordinator.data,
-            )
+        sensor_items = (
+            coordinator.data.values()
+            if isinstance(coordinator.data, dict)
+            else (coordinator.data or [])
         )
+        new_sensors = [
+            s
+            for s in sensor_items
+            if s.key not in known_sensors and s.type != "location"
+        ]
         LOGGER.debug(
             "_check_device entry.subentries:%s\nknown_sensors:%s\nnew_sensors:%s",
             entry.subentries,

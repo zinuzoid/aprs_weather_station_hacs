@@ -35,9 +35,13 @@ def find_subentry(
 
 
 def find_sensor_data(
-    sensors: list[APRSWSSensorData], key: str
+    sensors: dict[str, APRSWSSensorData] | list[APRSWSSensorData] | None, key: str
 ) -> APRSWSSensorData | None:
     """Find sensor data by its unique key."""
+    if not sensors:
+        return None
+    if isinstance(sensors, dict):
+        return sensors.get(key)
     return next(
         (data for data in sensors if data.key == key),
         None,
@@ -69,6 +73,6 @@ class APRSWSEntity(CoordinatorEntity[APRSWSDataUpdateCoordinator]):
 
     @staticmethod
     def _find_sensor_data(
-        sensors: list[APRSWSSensorData], key: str
+        sensors: dict[str, APRSWSSensorData] | list[APRSWSSensorData] | None, key: str
     ) -> APRSWSSensorData | None:
         return find_sensor_data(sensors, key)
