@@ -150,8 +150,9 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
             return
 
         LOGGER.debug(
-            "update sensor_data for %s with value %s %s",
+            "update sensor_data for %s with value %s",
             new_data.key,
+            new_data.value,
         )
         self.data = new_data
         self.async_write_ha_state()
