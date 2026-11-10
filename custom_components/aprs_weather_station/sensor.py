@@ -12,7 +12,6 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import callback
 
 from .const import (
-    CONF_CALLSIGN,
     LOGGER,
     SENSOR_TYPE_TO_MDI_ICONS,
     SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS,
@@ -20,33 +19,20 @@ from .const import (
     SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT,
 )
 from .data import APRSWSSensorData
-from .entity import APRSWSEntity
+from .entity import APRSWSEntity, find_subentry
+
+# Backward-compatible alias
+_find_subentry = find_subentry
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from types import MappingProxyType
 
-    from homeassistant.config_entries import ConfigSubentry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
     from homeassistant.helpers.typing import StateType
 
     from .coordinator import APRSWSDataUpdateCoordinator
     from .data import APRSWSConfigEntry
-
-
-def _find_subentry(
-    subentries: MappingProxyType[str, ConfigSubentry], callsign: str
-) -> ConfigSubentry | None:
-    callsign_upper = callsign.upper()
-    return next(
-        (
-            subentry
-            for subentry in subentries.values()
-            if subentry.data[CONF_CALLSIGN].upper() == callsign_upper
-        ),
-        None,
-    )
 
 
 async def async_setup_entry(
@@ -199,15 +185,6 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
     def native_value(self) -> StateType | datetime:
         """Return the native value of the sensor."""
         return self.data.value
-
-    @staticmethod
-    def _find_sensor_data(
-        sensors: list[APRSWSSensorData], key: str
-    ) -> APRSWSSensorData | None:
-        return next(
-            (data for data in sensors if data.key == key),
-            None,
-        )
 
     @callback
     def _handle_coordinator_update(self) -> None:

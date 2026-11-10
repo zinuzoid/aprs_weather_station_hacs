@@ -19,6 +19,10 @@ from custom_components.aprs_weather_station.device_tracker import (
 from custom_components.aprs_weather_station.device_tracker import (
     _find_subentry as tracker_find_subentry,
 )
+from custom_components.aprs_weather_station.entity import (
+    find_sensor_data,
+    find_subentry,
+)
 from custom_components.aprs_weather_station.sensor import (
     APRSWSSensor,
 )
@@ -44,6 +48,22 @@ def test_find_subentry_case_insensitive() -> None:
     # Non-matching
     assert sensor_find_subentry(subentries, "N0CALL") is None
     assert tracker_find_subentry(subentries, "N0CALL") is None
+
+
+def test_find_sensor_data_helper() -> None:
+    """Test find_sensor_data shared helper in entity.py (Item 21)."""
+    s1 = APRSWSSensorData(
+        timestamp=100, callsign="W3ADO-1", type="temperature", value=20
+    )
+    s2 = APRSWSSensorData(timestamp=100, callsign="W3ADO-1", type="humidity", value=50)
+
+    assert find_sensor_data([s1, s2], "W3ADO-1_temperature") is s1
+    assert find_sensor_data([s1, s2], "W3ADO-1_humidity") is s2
+    assert find_sensor_data([s1, s2], "W3ADO-1_wind_speed") is None
+
+    subentry = MagicMock()
+    subentry.data = {CONF_CALLSIGN: "W3ADO-1"}
+    assert find_subentry(MappingProxyType({"s1": subentry}), "w3ado-1") is subentry
 
 
 def test_is_connected_sensor_unique_id_and_device_info() -> None:

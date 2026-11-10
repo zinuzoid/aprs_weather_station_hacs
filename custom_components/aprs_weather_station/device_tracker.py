@@ -11,36 +11,22 @@ from homeassistant.components.device_tracker.config_entry import (
 from homeassistant.core import callback
 
 from .const import (
-    CONF_CALLSIGN,
     LOGGER,
     SENSOR_TYPE_TO_MDI_ICONS,
 )
-from .entity import APRSWSEntity
+from .entity import APRSWSEntity, find_subentry
+
+# Backward-compatible alias
+_find_subentry = find_subentry
 
 if TYPE_CHECKING:
     from datetime import datetime
-    from types import MappingProxyType
 
-    from homeassistant.config_entries import ConfigSubentry
     from homeassistant.core import HomeAssistant
     from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
     from .coordinator import APRSWSDataUpdateCoordinator
     from .data import APRSWSConfigEntry, APRSWSSensorData
-
-
-def _find_subentry(
-    subentries: MappingProxyType[str, ConfigSubentry], callsign: str
-) -> ConfigSubentry | None:
-    callsign_upper = callsign.upper()
-    return next(
-        (
-            subentry
-            for subentry in subentries.values()
-            if subentry.data[CONF_CALLSIGN].upper() == callsign_upper
-        ),
-        None,
-    )
 
 
 async def async_setup_entry(
@@ -110,15 +96,6 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
         self.data = data
         if self.device_info:
             self.device_info.update(name=data.callsign)
-
-    @staticmethod
-    def _find_sensor_data(
-        sensors: list[APRSWSSensorData], key: str
-    ) -> APRSWSSensorData | None:
-        return next(
-            (data for data in sensors if data.key == key),
-            None,
-        )
 
     def _set_location_data(self, value: str | float | datetime | None) -> bool:
         if not isinstance(value, str):

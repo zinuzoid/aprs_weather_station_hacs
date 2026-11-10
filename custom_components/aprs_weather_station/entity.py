@@ -1,4 +1,4 @@
-"""BlueprintEntity class."""
+"""Base entity for aprs_weather_station."""
 
 from __future__ import annotations
 
@@ -7,11 +7,41 @@ from typing import TYPE_CHECKING
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION
+from .const import ATTRIBUTION, CONF_CALLSIGN
 from .coordinator import APRSWSDataUpdateCoordinator
 
 if TYPE_CHECKING:
+    from types import MappingProxyType
+
+    from homeassistant.config_entries import ConfigSubentry
     from homeassistant.helpers.entity import EntityDescription
+
+    from .data import APRSWSSensorData
+
+
+def find_subentry(
+    subentries: MappingProxyType[str, ConfigSubentry], callsign: str
+) -> ConfigSubentry | None:
+    """Find a subentry matching the callsign case-insensitively."""
+    callsign_upper = callsign.upper()
+    return next(
+        (
+            subentry
+            for subentry in subentries.values()
+            if subentry.data[CONF_CALLSIGN].upper() == callsign_upper
+        ),
+        None,
+    )
+
+
+def find_sensor_data(
+    sensors: list[APRSWSSensorData], key: str
+) -> APRSWSSensorData | None:
+    """Find sensor data by its unique key."""
+    return next(
+        (data for data in sensors if data.key == key),
+        None,
+    )
 
 
 class APRSWSEntity(CoordinatorEntity[APRSWSDataUpdateCoordinator]):
@@ -36,3 +66,9 @@ class APRSWSEntity(CoordinatorEntity[APRSWSDataUpdateCoordinator]):
                 ),
             },
         )
+
+    @staticmethod
+    def _find_sensor_data(
+        sensors: list[APRSWSSensorData], key: str
+    ) -> APRSWSSensorData | None:
+        return find_sensor_data(sensors, key)
