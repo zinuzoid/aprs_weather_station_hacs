@@ -6,7 +6,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 from slugify import slugify
 
@@ -46,7 +46,7 @@ class APRSWSFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         _errors = {}
         if user_input is not None:
             try:
-                await _test_connect(callsign=user_input[CONF_YOUR_CALLSIGN])
+                await _test_connect(self.hass, callsign=user_input[CONF_YOUR_CALLSIGN])
             except APRSWSApiClientAuthenticationError as exception:
                 LOGGER.warning(exception)
                 _errors["base"] = "auth"
@@ -102,6 +102,7 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
         if user_input is not None:
             try:
                 await _test_connect(
+                    self.hass,
                     callsign=config_entry.data[CONF_YOUR_CALLSIGN],
                     budlist=[user_input[CONF_CALLSIGN]],
                 )
@@ -138,10 +139,12 @@ class BudlistSubentryFlowHandler(config_entries.ConfigSubentryFlow):
         )
 
 
-async def _test_connect(callsign: str, budlist: list[str] | None = None) -> None:
+async def _test_connect(
+    hass: HomeAssistant, callsign: str, budlist: list[str] | None = None
+) -> None:
     """Test connection."""
     client = APRSWSApiClient(
         callsign=callsign,
         budlist=budlist,
     )
-    client.test_connection()
+    await hass.async_add_executor_job(client.test_connection)
