@@ -50,6 +50,10 @@ async def test_coordinator_status_callback_updates_is_connected() -> None:
 
     call_args = coordinator.async_set_updated_data.call_args[0][0]
     assert call_args["APRS-IS_is_connected"].value is True
+    assert (
+        getattr(coordinator._async_handle_status_update, "_hass_callback", False)
+        is True
+    )
 
 
 @pytest.mark.asyncio
@@ -88,6 +92,9 @@ async def test_coordinator_packet_callback_merges_data_and_keeps_connected() -> 
     assert coordinator.data["APRS-IS_is_connected"].value is True
     assert coordinator.data["W3ADO-1_temperature"].value == 21.5
     assert coordinator.data["W3ADO-1_humidity"].value == 65
+    assert (
+        getattr(coordinator._async_handle_packet_data, "_hass_callback", False) is True
+    )
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,7 @@ from datetime import timedelta
 from time import time
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .aprs_parser import APRSPacketParser
@@ -52,6 +53,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[dict[str, APRSWSSensorDa
         LOGGER.debug("APRS connection status changed: %s", connected)
         self.hass.add_job(self._async_handle_status_update, connected)
 
+    @callback
     def _async_handle_status_update(self, connected: bool) -> None:  # noqa: FBT001
         """Handle connection status update on event loop."""
         conn_sensor = self._create_is_connected_data(is_connected=connected)
@@ -67,6 +69,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[dict[str, APRSWSSensorDa
         LOGGER.debug("update data %s", data)
         self.hass.add_job(self._async_handle_packet_data, data)
 
+    @callback
     def _async_handle_packet_data(self, data: list[APRSWSSensorData]) -> None:
         """Handle packet data on event loop."""
         conn_sensor = self._create_is_connected_data(is_connected=True)
