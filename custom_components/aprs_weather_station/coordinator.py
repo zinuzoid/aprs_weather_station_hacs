@@ -70,7 +70,9 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
 
         if budlist != client.budlist:
             client.budlist = budlist
-            client.start_listening(self.aprs_callback)
+            await self.hass.async_add_executor_job(
+                client.start_listening, self.aprs_callback
+            )
 
         return data
 

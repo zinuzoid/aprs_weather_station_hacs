@@ -7,7 +7,7 @@ https://github.com/zinuzoid/aprs_weather_station_hacs
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.loader import async_get_loaded_integration
@@ -47,10 +47,13 @@ async def async_setup_entry(
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    async def _async_stop(_: Any) -> None:
+        await hass.async_add_executor_job(entry.runtime_data.client.stop_and_join)
+
     entry.async_on_unload(
         hass.bus.async_listen_once(
             EVENT_HOMEASSISTANT_STOP,
-            lambda _: entry.runtime_data.client.stop_and_join(),
+            _async_stop,
         )
     )
 
