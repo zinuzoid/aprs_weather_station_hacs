@@ -174,20 +174,20 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
                 f"{coordinator.config_entry.entry_id}_{entity_description.key}"
             )
             if self.device_info:
-                self.device_info.update(
-                    name=f"APRS-IS ({coordinator.config_entry.title})",
-                    manufacturer="APRS-IS",
-                )
+                self.device_info["name"] = f"APRS-IS ({coordinator.config_entry.title})"
+                self.device_info["manufacturer"] = "APRS-IS"
         else:
             super().__init__(coordinator, entity_description, data.callsign)
             if self.device_info:
-                self.device_info.update(name=data.callsign)
+                self.device_info["name"] = data.callsign
         self.entity_description = entity_description
         self.data = data
 
     @property
     def native_value(self) -> StateType | datetime:
         """Return the native value of the sensor."""
+        if isinstance(self.data.value, tuple):
+            return None
         return self.data.value
 
     @callback

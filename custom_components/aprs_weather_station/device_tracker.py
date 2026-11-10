@@ -99,7 +99,7 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
         self._set_location_data(data.value)
         self.data = data
         if self.device_info:
-            self.device_info.update(name=data.callsign)
+            self.device_info["name"] = data.callsign
 
     def _set_location_data(
         self, value: tuple[float, float] | str | float | datetime | None
