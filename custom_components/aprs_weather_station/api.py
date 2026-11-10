@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import aprslib
 
@@ -70,7 +70,11 @@ class APRSWSApiClient:
             msg = f"Something wrong! - {ex}"
             raise APRSWSApiClientCommunicationError(msg) from ex
 
-    def start_listening(self, callback: Callable[[dict[str, str]]]) -> None:
+    def start_listening(
+        self,
+        callback: Callable[[dict[str, Any]], None],
+        status_callback: Callable[[bool], None] | None = None,
+    ) -> None:
         """Start listening to APRS packet."""
         LOGGER.debug(
             "start_listening with budlist: %s", self._gen_filter_from_budlist()
@@ -82,12 +86,17 @@ class APRSWSApiClient:
             callsign=self._callsign,
             budlist_filter=self._gen_filter_from_budlist(),
             callback=callback,
+            status_callback=status_callback,
         )
         self._aprs_listener.start()
 
-    def is_connected(self) -> bool | None:
+    def is_listening(self) -> bool:
+        """Return if aprs listener thread is active."""
+        return self._aprs_listener is not None and self._aprs_listener.is_alive()
+
+    def is_connected(self) -> bool:
         """Return if aprs client is connected."""
-        return self._aprs_listener.is_connected() if self._aprs_listener else None
+        return bool(self._aprs_listener and self._aprs_listener.is_connected())
 
     def stop_and_join(self) -> None:
         """Stop and join thread."""

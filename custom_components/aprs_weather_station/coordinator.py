@@ -68,7 +68,8 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[list[APRSWSSensorData]])
             LOGGER.warning("budlist is None, skip start_listening!")
             return data
 
-        if budlist != client.budlist:
+        should_start = (budlist != client.budlist) or not client.is_listening()
+        if should_start:
             client.budlist = budlist
             await self.hass.async_add_executor_job(
                 client.start_listening, self.aprs_callback

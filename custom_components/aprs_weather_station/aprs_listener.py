@@ -74,9 +74,8 @@ FAKE_DATA2 = {
 class APRSListener(threading.Thread):
     """APRS-IS listener thread that receives packets and routes them to callbacks."""
 
-    RETRY_DELAY = 5  # seconds
-    MAX_RETRIES = int(5 * 60 / RETRY_DELAY)  #  try for 5 minutes
-    MAX_RECONNECTS = 10  # Maximum reconnection attempts after ConnectionDrop
+    MIN_RETRY_DELAY = 5  # seconds
+    MAX_RETRY_DELAY = 60  # seconds
 
     SEND_FAKE_DATA = False
 
@@ -85,6 +84,7 @@ class APRSListener(threading.Thread):
         callsign: str,
         budlist_filter: str | None,
         callback: Callable[[dict[str, Any]], None] | None,
+        status_callback: Callable[[bool], None] | None = None,
     ) -> None:
         """Initialize the APRS listener."""
         # Daemon thread so a stuck socket never blocks interpreter exit.
@@ -93,6 +93,7 @@ class APRSListener(threading.Thread):
         self._callsign = callsign
         self._budlist_filter = budlist_filter
         self._callback = callback
+        self._status_callback = status_callback
         self._ais = aprslib.IS(
             self._callsign, port=10152 if budlist_filter is None else 14580
         )
@@ -106,36 +107,37 @@ class APRSListener(threading.Thread):
         if self._callback:
             self._callback(packet)
 
-    def _connect_with_retry(self) -> bool:
-        """Connect to APRS-IS with retry logic. Return False if stopped."""
-        for attempt in range(self.MAX_RETRIES):
-            if self._stop_event.is_set():
-                return False
+    def _notify_status(self, *, connected: bool) -> None:
+        """Notify status callback of connection state change."""
+        if self._status_callback:
             try:
-                self._ais.connect()
-            except (aprslib.exceptions.LoginError, ConnectionError) as e:
-                if attempt < self.MAX_RETRIES - 1:
-                    LOGGER.warning(
-                        "Connection attempt %d/%d failed: %s. Retrying in %d seconds.",
-                        attempt + 1,
-                        self.MAX_RETRIES,
-                        e,
-                        self.RETRY_DELAY,
-                    )
-                    if self._stop_event.wait(self.RETRY_DELAY):
-                        return False
-                else:
-                    LOGGER.error(
-                        "Connection failed after %d attempts: %s", self.MAX_RETRIES, e
-                    )
-                    raise
-            else:
-                if self._stop_event.is_set():
-                    # stop() was called while connecting
-                    self._ais.close()
-                    return False
-                return True  # Connection successful
-        return False
+                self._status_callback(connected)
+            except Exception as e:  # noqa: BLE001
+                LOGGER.error("Error in APRS status callback: %s", e)
+
+    def _connect(self) -> bool:
+        """Attempt to connect to APRS-IS. Return True on success."""
+        if self._stop_event.is_set():
+            return False
+        try:
+            self._ais.connect()
+        except (
+            aprslib.exceptions.LoginError,
+            aprslib.exceptions.GenericError,
+            ConnectionError,
+            OSError,
+        ) as e:
+            LOGGER.warning("Connection to APRS-IS failed: %s", e)
+            self._notify_status(connected=False)
+            return False
+
+        if self._stop_event.is_set():
+            self._ais.close()
+            self._notify_status(connected=False)
+            return False
+
+        self._notify_status(connected=True)
+        return True
 
     def run(self) -> None:  # noqa: PLR0912
         """Thread entry point - connects to APRS-IS and starts consuming packets."""
@@ -146,18 +148,23 @@ class APRSListener(threading.Thread):
             time.sleep(3)
             self._consumer_callback(FAKE_DATA1)
 
+        delay = self.MIN_RETRY_DELAY
         try:
-            # Main consumer loop with automatic reconnection
-            reconnect_attempts = 0
-            while (
-                not self._stop_event.is_set()
-                and reconnect_attempts < self.MAX_RECONNECTS
-            ):
-                # Connect with retry logic (handles both initial and reconnection)
-                if not self._connect_with_retry():
-                    break
-                # Reset reconnect counter after successful connection
-                reconnect_attempts = 0
+            # Main consumer loop with automatic reconnection and backoff
+            while not self._stop_event.is_set():
+                if not self._connect():
+                    if self._stop_event.is_set():
+                        break
+                    LOGGER.info(
+                        "APRS connection failed. Retrying in %d seconds...", delay
+                    )
+                    if self._stop_event.wait(delay):
+                        break
+                    delay = min(delay * 2, self.MAX_RETRY_DELAY)
+                    continue
+
+                # Reset backoff delay after successful connection
+                delay = self.MIN_RETRY_DELAY
 
                 # Set filter if needed
                 if self._budlist_filter:
@@ -165,42 +172,23 @@ class APRSListener(threading.Thread):
 
                 try:
                     self._ais.consumer(self._consumer_callback)
-                    # If consumer returns normally (shouldn't happen), break
-                    break
                 except aprslib.exceptions.ConnectionDrop as e:
                     if self._stop_event.is_set():
-                        # Socket was shut down by stop(), don't reconnect
                         break
-                    reconnect_attempts += 1
-                    LOGGER.warning(
-                        "Connection dropped (attempt %d/%d): %s. Reconnecting...",
-                        reconnect_attempts,
-                        self.MAX_RECONNECTS,
-                        e,
-                    )
-                    # Close stale connection
+                    LOGGER.warning("Connection dropped: %s. Reconnecting...", e)
+                    self._notify_status(connected=False)
+                except (
+                    OSError,
+                    ConnectionError,
+                    aprslib.exceptions.GenericError,
+                ) as e:
+                    if self._stop_event.is_set():
+                        break
+                    LOGGER.warning("Connection error: %s. Reconnecting...", e)
+                    self._notify_status(connected=False)
+                finally:
                     if self.is_connected():
                         self._ais.close()
-                    # Continue to next iteration to reconnect
-                    continue
-
-            # Check if we exited due to max reconnection attempts
-            if reconnect_attempts >= self.MAX_RECONNECTS:
-                LOGGER.error(
-                    "Max reconnection attempts (%d) exceeded. Stopping listener.",
-                    self.MAX_RECONNECTS,
-                )
-        except (
-            OSError,
-            ValueError,
-            ConnectionError,
-            aprslib.exceptions.GenericError,
-        ) as e:
-            # Connection failed or socket was closed from main thread
-            if self._stop_event.is_set():
-                LOGGER.debug("Listener stopped: %s", e)
-            else:
-                LOGGER.exception(e)
         except Exception as e:  # noqa: BLE001
             # Catch all other exceptions to prevent thread from hanging
             LOGGER.error(
@@ -208,6 +196,7 @@ class APRSListener(threading.Thread):
             )
         finally:
             self.stop()
+            self._notify_status(connected=False)
 
     def stop(self) -> None:
         """Signal the listener to stop and close the connection."""
@@ -229,4 +218,4 @@ class APRSListener(threading.Thread):
 
     def is_connected(self) -> bool:
         """Check if the APRS-IS connection is active."""
-        return self._ais._connected  # noqa: SLF001
+        return bool(getattr(self._ais, "_connected", False))
