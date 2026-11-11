@@ -2,21 +2,18 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING
 
 from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.const import EntityCategory
 from homeassistant.core import callback
 
 from .const import (
     LOGGER,
-    SENSOR_TYPE_TO_MDI_ICONS,
-    SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS,
-    SENSOR_TYPE_TO_SENSOR_STATE_CLASS,
-    SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT,
+    SENSOR_DESCRIPTIONS_MAP,
 )
 from .data import APRSWSSensorData
 from .entity import APRSWSEntity, find_subentry
@@ -112,56 +109,17 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
     ) -> None:
         """Initialize the sensor class."""
         if entity_description is None:
-            if data.type == "timestamp":
-                entity_description = SensorEntityDescription(
+            base_description = SENSOR_DESCRIPTIONS_MAP.get(data.type)
+            if base_description is not None:
+                entity_description = dataclasses.replace(
+                    base_description,
                     key=data.key,
-                    translation_key="last_timestamp",
-                    has_entity_name=True,
-                    device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
-                    icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
-                    state_class=SENSOR_TYPE_TO_SENSOR_STATE_CLASS[data.type],
-                    native_unit_of_measurement=SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT[
-                        data.type
-                    ],
-                    entity_category=EntityCategory.DIAGNOSTIC,
-                )
-            elif data.type == "packet_received":
-                entity_description = SensorEntityDescription(
-                    key=data.key,
-                    translation_key="packet_received",
-                    has_entity_name=True,
-                    device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
-                    icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
-                    state_class=SENSOR_TYPE_TO_SENSOR_STATE_CLASS[data.type],
-                    native_unit_of_measurement=SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT[
-                        data.type
-                    ],
-                    entity_category=EntityCategory.DIAGNOSTIC,
-                )
-            elif data.type == "is_connected":
-                entity_description = SensorEntityDescription(
-                    key=data.key,
-                    translation_key="is_connected",
-                    has_entity_name=True,
-                    device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
-                    icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
-                    state_class=SENSOR_TYPE_TO_SENSOR_STATE_CLASS[data.type],
-                    native_unit_of_measurement=SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT[
-                        data.type
-                    ],
-                    entity_category=EntityCategory.DIAGNOSTIC,
                 )
             else:
                 entity_description = SensorEntityDescription(
                     key=data.key,
                     translation_key=data.type,
                     has_entity_name=True,
-                    device_class=SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS[data.type],
-                    icon=SENSOR_TYPE_TO_MDI_ICONS[data.type],
-                    state_class=SENSOR_TYPE_TO_SENSOR_STATE_CLASS[data.type],
-                    native_unit_of_measurement=SENSOR_TYPE_TO_UNIT_OF_MEASUREMENT[
-                        data.type
-                    ],
                 )
 
         if data.type == "is_connected":

@@ -10,6 +10,8 @@ from custom_components.aprs_weather_station.aprs_parser import APRSPacketParser
 from custom_components.aprs_weather_station.const import (
     CONF_CALLSIGN,
     DOMAIN,
+    SENSOR_DESCRIPTIONS,
+    SENSOR_DESCRIPTIONS_MAP,
     SENSOR_TYPE_TO_SENSOR_DEVICE_CLASS,
     SENSOR_TYPE_TO_SENSOR_STATE_CLASS,
 )
@@ -194,3 +196,16 @@ def test_wind_direction_device_and_state_class() -> None:
         SENSOR_TYPE_TO_SENSOR_STATE_CLASS["wind_direction"]
         == SensorStateClass.MEASUREMENT_ANGLE
     )
+
+
+def test_sensor_descriptions_structure() -> None:
+    """Test SENSOR_DESCRIPTIONS tuple and SENSOR_DESCRIPTIONS_MAP (Item 19)."""
+    assert len(SENSOR_DESCRIPTIONS) >= 11
+    assert "temperature" in SENSOR_DESCRIPTIONS_MAP
+    assert "wind_speed" in SENSOR_DESCRIPTIONS_MAP
+    assert "timestamp" in SENSOR_DESCRIPTIONS_MAP
+    assert "is_connected" in SENSOR_DESCRIPTIONS_MAP
+
+    temp_desc = SENSOR_DESCRIPTIONS_MAP["temperature"]
+    assert temp_desc.device_class == SensorDeviceClass.TEMPERATURE
+    assert temp_desc.state_class == SensorStateClass.MEASUREMENT
