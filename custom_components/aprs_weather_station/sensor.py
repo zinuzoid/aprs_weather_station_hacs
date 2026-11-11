@@ -201,8 +201,11 @@ class APRSWSPacketReceivedSensor(APRSWSSensor):
         if not new_data:
             return
 
-        if self.data.timestamp == new_data.timestamp and new_data is getattr(
-            self, "_last_data_obj", None
+        if (
+            self.data
+            and self.data.timestamp == new_data.timestamp
+            and self._last_data_obj is not None
+            and new_data is self._last_data_obj
         ):
             LOGGER.debug(
                 "Duplicate timestamp for %s (%s), skipping",
