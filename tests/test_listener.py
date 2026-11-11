@@ -4,7 +4,11 @@ from unittest.mock import MagicMock
 
 from custom_components.aprs_weather_station.api import APRSWSApiClient
 from custom_components.aprs_weather_station.aprs_listener import APRSListener
-from custom_components.aprs_weather_station.aprs_parser import APRSPacketParser
+from custom_components.aprs_weather_station.aprs_parser import (
+    WEATHER_FIELD_TO_SENSOR_TYPE,
+    APRSPacketParser,
+    parse_aprs_packet,
+)
 from tests.fixtures.packets import FAKE_DATA1, FAKE_DATA2
 
 
@@ -85,3 +89,35 @@ def test_fixtures_packets_parse() -> None:
     types2 = {s.type for s in sensors2}
     assert "temperature" in types2
     assert "location" in types2
+
+
+def test_parse_aprs_packet_table_driven() -> None:
+    """Test parse_aprs_packet function and table-driven weather mapping (Item 20)."""
+    packet = {
+        "from": "W3ADO-1",
+        "timestamp": 1700000000,
+        "latitude": 38.9876,
+        "longitude": -76.5432,
+        "course": 270,
+        "weather": {
+            "wind_speed": 5.5,
+            "wind_gust": 8.2,
+            "temperature": 21.5,
+            "rain_1h": 1.2,
+            "humidity": 65,
+            "pressure": 1013.2,
+            "luminosity": 450,
+        },
+    }
+
+    sensors = parse_aprs_packet(packet)
+    type_map = {s.type: s.value for s in sensors}
+
+    assert type_map["timestamp"] is not None
+    assert type_map["packet_received"] == 1
+    assert type_map["location"] == (38.9876, -76.5432)
+    assert type_map["wind_direction"] == 270
+
+    for field, sensor_type in WEATHER_FIELD_TO_SENSOR_TYPE.items():
+        assert sensor_type in type_map
+        assert type_map[sensor_type] == packet["weather"][field]

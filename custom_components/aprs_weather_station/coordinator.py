@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .aprs_parser import APRSPacketParser
+from .aprs_parser import parse_aprs_packet
 from .const import CONF_CALLSIGN, DOMAIN, LOGGER
 from .data import APRSWSSensorData
 
@@ -64,7 +64,7 @@ class APRSWSDataUpdateCoordinator(DataUpdateCoordinator[dict[str, APRSWSSensorDa
         """Execute on non-loop thread. Handle APRS packet."""
         LOGGER.debug("Received packet: %s", packet)
 
-        data = APRSPacketParser().parse(packet)
+        data = parse_aprs_packet(packet)
 
         LOGGER.debug("update data %s", data)
         self.hass.add_job(self._async_handle_packet_data, data)
