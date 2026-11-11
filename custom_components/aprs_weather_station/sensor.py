@@ -157,8 +157,17 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
         if not new_data:
             return
 
-        if self.data and self.data.timestamp == new_data.timestamp:
-            LOGGER.warning("found duplicated timestamp, ignore data...")
+        if (
+            self.data
+            and self.data.timestamp == new_data.timestamp
+            and self.data.value == new_data.value
+        ):
+            LOGGER.debug(
+                "Duplicate data for %s (timestamp=%s, value=%s), skipping",
+                new_data.key,
+                new_data.timestamp,
+                new_data.value,
+            )
             return
 
         LOGGER.debug(
@@ -181,6 +190,7 @@ class APRSWSPacketReceivedSensor(APRSWSSensor):
     ) -> None:
         """Initialize the sensor class."""
         super().__init__(data, coordinator, entity_description)
+        self._last_data_obj: APRSWSSensorData | None = data
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -191,9 +201,17 @@ class APRSWSPacketReceivedSensor(APRSWSSensor):
         if not new_data:
             return
 
-        if self.data.timestamp == new_data.timestamp:
-            LOGGER.warning("found duplicated timestamp, ignore data...")
+        if self.data.timestamp == new_data.timestamp and new_data is getattr(
+            self, "_last_data_obj", None
+        ):
+            LOGGER.debug(
+                "Duplicate timestamp for %s (%s), skipping",
+                new_data.key,
+                new_data.timestamp,
+            )
             return
+
+        self._last_data_obj = new_data
 
         new_data_copy = APRSWSSensorData.from_other_with_new_value(
             new_data,

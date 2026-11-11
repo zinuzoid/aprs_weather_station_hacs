@@ -136,8 +136,17 @@ class APRSWSLocationSensor(APRSWSEntity, TrackerEntity):
         if not new_data:
             return
 
-        if self.data and self.data.timestamp == new_data.timestamp:
-            LOGGER.warning("found duplicated timestamp, ignore data...")
+        if (
+            self.data
+            and self.data.timestamp == new_data.timestamp
+            and self.data.value == new_data.value
+        ):
+            LOGGER.debug(
+                "Duplicate location for %s (timestamp=%s, value=%s), skipping",
+                new_data.key,
+                new_data.timestamp,
+                new_data.value,
+            )
             return
 
         if not self._set_location_data(new_data.value):

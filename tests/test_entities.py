@@ -27,6 +27,7 @@ from custom_components.aprs_weather_station.entity import (
     find_subentry,
 )
 from custom_components.aprs_weather_station.sensor import (
+    APRSWSPacketReceivedSensor,
     APRSWSSensor,
 )
 from custom_components.aprs_weather_station.sensor import (
@@ -209,3 +210,136 @@ def test_sensor_descriptions_structure() -> None:
     temp_desc = SENSOR_DESCRIPTIONS_MAP["temperature"]
     assert temp_desc.device_class == SensorDeviceClass.TEMPERATURE
     assert temp_desc.state_class == SensorStateClass.MEASUREMENT
+
+
+def test_sensor_duplicate_timestamp_and_value_ignored() -> None:
+    """Test APRSWSSensor ignores duplicates with identical timestamp and value."""
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry_123"
+    coordinator.config_entry.domain = DOMAIN
+
+    sensor_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="temperature",
+        value=20.0,
+    )
+    sensor = APRSWSSensor(data=sensor_data, coordinator=coordinator)
+    sensor.async_write_ha_state = MagicMock()
+
+    # Case 1: Identical timestamp and value -> skip update
+    dup_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="temperature",
+        value=20.0,
+    )
+    coordinator.data = {dup_data.key: dup_data}
+    sensor._handle_coordinator_update()
+    sensor.async_write_ha_state.assert_not_called()
+
+    # Case 2: Same timestamp, different value -> process update
+    new_value_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="temperature",
+        value=21.5,
+    )
+    coordinator.data = {new_value_data.key: new_value_data}
+    sensor._handle_coordinator_update()
+    sensor.async_write_ha_state.assert_called_once()
+    assert sensor.native_value == 21.5
+
+    # Case 3: Different timestamp, same value -> process update
+    sensor.async_write_ha_state.reset_mock()
+    new_ts_data = APRSWSSensorData(
+        timestamp=1700000060,
+        callsign="W3ADO-1",
+        type="temperature",
+        value=21.5,
+    )
+    coordinator.data = {new_ts_data.key: new_ts_data}
+    sensor._handle_coordinator_update()
+    sensor.async_write_ha_state.assert_called_once()
+    assert sensor.data.timestamp == 1700000060
+
+
+def test_location_sensor_duplicate_timestamp_and_value_ignored() -> None:
+    """Test APRSWSLocationSensor ignores identical timestamp and value duplicates."""
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry_123"
+    coordinator.config_entry.domain = DOMAIN
+
+    loc_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="location",
+        value=(38.9876, -76.5432),
+    )
+    tracker = APRSWSLocationSensor(data=loc_data, coordinator=coordinator)
+    tracker.async_write_ha_state = MagicMock()
+
+    # Case 1: Identical timestamp and value -> skip update
+    dup_loc = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="location",
+        value=(38.9876, -76.5432),
+    )
+    coordinator.data = {dup_loc.key: dup_loc}
+    tracker._handle_coordinator_update()
+    tracker.async_write_ha_state.assert_not_called()
+
+    # Case 2: Same timestamp, different location value -> process update
+    new_loc = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="location",
+        value=(39.0000, -76.5000),
+    )
+    coordinator.data = {new_loc.key: new_loc}
+    tracker._handle_coordinator_update()
+    tracker.async_write_ha_state.assert_called_once()
+    assert tracker.latitude == pytest.approx(39.0000)
+    assert tracker.longitude == pytest.approx(-76.5000)
+
+
+def test_packet_received_sensor_duplicate_handling() -> None:
+    """Test packet received sensor skips duplicate refresh and increments on new."""
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry_123"
+    coordinator.config_entry.domain = DOMAIN
+
+    packet_data = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="packet_received",
+        value=1,
+    )
+    sensor = APRSWSPacketReceivedSensor(data=packet_data, coordinator=coordinator)
+    sensor.async_write_ha_state = MagicMock()
+    assert sensor.native_value == 1
+
+    # Coordinator refresh with the SAME object and timestamp -> skip
+    coordinator.data = {packet_data.key: packet_data}
+    sensor._handle_coordinator_update()
+    sensor.async_write_ha_state.assert_not_called()
+    assert sensor.native_value == 1
+
+    # New packet arrives within same minute (different object, same ts) -> increment
+    new_packet = APRSWSSensorData(
+        timestamp=1700000000,
+        callsign="W3ADO-1",
+        type="packet_received",
+        value=1,
+    )
+    coordinator.data = {new_packet.key: new_packet}
+    sensor._handle_coordinator_update()
+    sensor.async_write_ha_state.assert_called_once()
+    assert sensor.native_value == 2
+
+    # Refresh with that same new_packet object -> skip
+    sensor.async_write_ha_state.reset_mock()
+    sensor._handle_coordinator_update()
+    sensor.async_write_ha_state.assert_not_called()
+    assert sensor.native_value == 2
