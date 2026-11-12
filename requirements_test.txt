@@ -3,5 +3,5 @@ pytest>=8.0.0
 pytest-asyncio>=1.4.1.post1
 pytest-cov>=7.1.0
 mypy>=2.4.1
-pycares<5
+pycares<6
 aprslib@git+https://github.com/shackrat/aprs-python@f337c8ebdf2bcf1438f9b5c0903421605ce7a80e
