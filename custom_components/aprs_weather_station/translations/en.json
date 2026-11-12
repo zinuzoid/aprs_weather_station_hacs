@@ -80,7 +80,11 @@
                 "name": "Illuminance"
             },
             "is_connected": {
-                "name": "Connection status"
+                "name": "Connection status",
+                "state": {
+                    "connected": "Connected",
+                    "disconnected": "Disconnected"
+                }
             }
         },
         "device_tracker": {

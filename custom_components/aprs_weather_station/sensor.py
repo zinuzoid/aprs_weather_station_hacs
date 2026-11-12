@@ -6,6 +6,7 @@ import dataclasses
 from typing import TYPE_CHECKING
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
 )
@@ -146,6 +147,11 @@ class APRSWSSensor(APRSWSEntity, SensorEntity):
         """Return the native value of the sensor."""
         if isinstance(self.data.value, tuple):
             return None
+        if (
+            self.entity_description.device_class == SensorDeviceClass.ENUM
+            and isinstance(self.data.value, bool)
+        ):
+            return "connected" if self.data.value else "disconnected"
         return self.data.value
 
     @callback

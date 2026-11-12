@@ -91,6 +91,19 @@ def test_is_connected_sensor_unique_id_and_device_info() -> None:
     # Device info identifier must be scoped to entry_id
     assert sensor.device_info["identifiers"] == {(DOMAIN, "entry_123")}
     assert "APRS-IS (N0CALL)" in sensor.device_info["name"]
+    # ENUM sensor maps boolean to option string
+    assert sensor.native_value == "connected"
+
+    sensor_disconnected = APRSWSSensor(
+        data=APRSWSSensorData(
+            timestamp=1700000000,
+            callsign="APRS-IS",
+            type="is_connected",
+            value=False,
+        ),
+        coordinator=coordinator,
+    )
+    assert sensor_disconnected.native_value == "disconnected"
 
 
 def test_station_sensor_unique_id_and_device_info() -> None:
@@ -210,6 +223,16 @@ def test_sensor_descriptions_structure() -> None:
     temp_desc = SENSOR_DESCRIPTIONS_MAP["temperature"]
     assert temp_desc.device_class == SensorDeviceClass.TEMPERATURE
     assert temp_desc.state_class == SensorStateClass.MEASUREMENT
+
+    # Item 8: timestamp must have TIMESTAMP device class and NO state class
+    ts_desc = SENSOR_DESCRIPTIONS_MAP["timestamp"]
+    assert ts_desc.device_class == SensorDeviceClass.TIMESTAMP
+    assert ts_desc.state_class is None
+
+    # Item 8: is_connected must have ENUM device class and options defined
+    conn_desc = SENSOR_DESCRIPTIONS_MAP["is_connected"]
+    assert conn_desc.device_class == SensorDeviceClass.ENUM
+    assert conn_desc.options == ["connected", "disconnected"]
 
 
 def test_sensor_duplicate_timestamp_and_value_ignored() -> None:
