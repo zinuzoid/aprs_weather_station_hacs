@@ -1,6 +1,9 @@
 """Tests for APRSListener thread and reconnect logic."""
 
+from typing import Any
 from unittest.mock import MagicMock
+
+import pytest
 
 from custom_components.aprs_weather_station.api import APRSWSApiClient
 from custom_components.aprs_weather_station.aprs_listener import APRSListener
@@ -8,6 +11,10 @@ from custom_components.aprs_weather_station.aprs_parser import (
     WEATHER_FIELD_TO_SENSOR_TYPE,
     APRSPacketParser,
     parse_aprs_packet,
+)
+from custom_components.aprs_weather_station.const import (
+    APRSIS_FULL_FEED_PORT,
+    APRSIS_USER_DEFINED_PORT,
 )
 from tests.fixtures.packets import FAKE_DATA1, FAKE_DATA2
 
@@ -121,3 +128,59 @@ def test_parse_aprs_packet_table_driven() -> None:
     for field, sensor_type in WEATHER_FIELD_TO_SENSOR_TYPE.items():
         assert sensor_type in type_map
         assert type_map[sensor_type] == packet["weather"][field]
+
+
+def test_listener_port_constants_and_custom_host_port() -> None:
+    """Test APRSListener uses port constants and supports custom host/port (Item 16)."""
+    # Default without budlist filter uses full feed port
+    listener_full = APRSListener(
+        callsign="N0CALL",
+        budlist_filter=None,
+        callback=lambda _: None,
+    )
+    assert listener_full.port == APRSIS_FULL_FEED_PORT
+    assert listener_full.host is None
+
+    # Default with budlist filter uses user defined port
+    listener_user = APRSListener(
+        callsign="N0CALL",
+        budlist_filter="b/W3ADO-1",
+        callback=lambda _: None,
+    )
+    assert listener_user.port == APRSIS_USER_DEFINED_PORT
+    assert listener_user.host is None
+
+    # Custom host and port
+    listener_custom = APRSListener(
+        callsign="N0CALL",
+        budlist_filter="b/W3ADO-1",
+        callback=lambda _: None,
+        host="rotate.aprs2.net",
+        port=14581,
+    )
+    assert listener_custom.port == 14581
+    assert listener_custom.host == "rotate.aprs2.net"
+
+
+def test_api_client_passes_custom_host_port(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test APRSWSApiClient forwards host and port (Item 16)."""
+    client = APRSWSApiClient(
+        callsign="N0CALL",
+        budlist=["W3ADO-1"],
+        host="custom.aprs.net",
+        port=14582,
+    )
+    assert client.host == "custom.aprs.net"
+    assert client.port == 14582
+
+    mock_is_calls: list[dict[str, Any]] = []
+
+    def mock_is(callsign: str, **kwargs: Any) -> MagicMock:
+        mock_is_calls.append({"callsign": callsign, **kwargs})
+        return MagicMock()
+
+    monkeypatch.setattr("aprslib.IS", mock_is)
+    client.test_connection()
+    assert len(mock_is_calls) == 1
+    assert mock_is_calls[0]["host"] == "custom.aprs.net"
+    assert mock_is_calls[0]["port"] == 14582

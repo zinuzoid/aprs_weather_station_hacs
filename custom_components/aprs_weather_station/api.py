@@ -38,10 +38,14 @@ class APRSWSApiClient:
         self,
         callsign: str,
         budlist: list[str] | None,
+        host: str | None = None,
+        port: int | None = None,
     ) -> None:
         """APRSWS API Client."""
         self._callsign = callsign
         self.budlist = budlist
+        self.host = host
+        self.port = port
         self._aprs_listener: APRSListener | None = None
 
     def _gen_filter_from_budlist(self) -> str | None:
@@ -53,15 +57,23 @@ class APRSWSApiClient:
     def test_connection(self) -> None:
         """Test connection to APRS-IS server."""
         ais_filter = self._gen_filter_from_budlist()
-        port = APRSIS_USER_DEFINED_PORT if self.budlist else APRSIS_FULL_FEED_PORT
+        port = (
+            self.port
+            if self.port is not None
+            else (APRSIS_USER_DEFINED_PORT if self.budlist else APRSIS_FULL_FEED_PORT)
+        )
         LOGGER.info(
-            "Test connection with: callsign=%s port=%s budlist=%s",
+            "Test connection with: callsign=%s host=%s port=%s budlist=%s",
             self._callsign,
+            self.host,
             port,
             ais_filter,
         )
         try:
-            ais = aprslib.IS(self._callsign, port=port)
+            kwargs: dict[str, Any] = {"port": port}
+            if self.host is not None:
+                kwargs["host"] = self.host
+            ais = aprslib.IS(self._callsign, **kwargs)
             if ais_filter is not None:
                 ais.set_filter(ais_filter)
             ais.connect()
@@ -90,6 +102,8 @@ class APRSWSApiClient:
             budlist_filter=self._gen_filter_from_budlist(),
             callback=callback,
             status_callback=status_callback,
+            host=self.host,
+            port=self.port,
         )
         self._aprs_listener.start()
 

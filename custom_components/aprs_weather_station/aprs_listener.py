@@ -9,7 +9,7 @@ from typing import Any
 import aprslib
 import aprslib.exceptions
 
-from .const import LOGGER
+from .const import APRSIS_FULL_FEED_PORT, APRSIS_USER_DEFINED_PORT, LOGGER
 
 
 class APRSListener(threading.Thread):
@@ -18,12 +18,15 @@ class APRSListener(threading.Thread):
     MIN_RETRY_DELAY = 5  # seconds
     MAX_RETRY_DELAY = 60  # seconds
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         callsign: str,
         budlist_filter: str | None,
         callback: Callable[[dict[str, Any]], None] | None,
         status_callback: Callable[[bool], None] | None = None,
+        *,
+        host: str | None = None,
+        port: int | None = None,
     ) -> None:
         """Initialize the APRS listener."""
         # Daemon thread so a stuck socket never blocks interpreter exit.
@@ -33,9 +36,30 @@ class APRSListener(threading.Thread):
         self._budlist_filter = budlist_filter
         self._callback = callback
         self._status_callback = status_callback
-        self._ais = aprslib.IS(
-            self._callsign, port=10152 if budlist_filter is None else 14580
+        self._port = (
+            port
+            if port is not None
+            else (
+                APRSIS_FULL_FEED_PORT
+                if budlist_filter is None
+                else APRSIS_USER_DEFINED_PORT
+            )
         )
+        self._host = host
+        kwargs: dict[str, Any] = {"port": self._port}
+        if self._host is not None:
+            kwargs["host"] = self._host
+        self._ais = aprslib.IS(self._callsign, **kwargs)
+
+    @property
+    def port(self) -> int:
+        """Return the port used by listener."""
+        return self._port
+
+    @property
+    def host(self) -> str | None:
+        """Return the host used by listener."""
+        return self._host
 
     def _consumer_callback(self, packet: dict[str, Any]) -> None:
         """Handle incoming APRS-IS packets."""
